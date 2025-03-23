@@ -15,10 +15,10 @@ public class FisherBot extends Bot
     private boolean repairInstrument;
     private boolean lineBreaks;
 
-    /*public static BotRegistration getRegistration() {
+    public static BotRegistration getRegistration() {
         return new BotRegistration(FisherBot.class,
                 "Catches and cuts fish", "fsh");
-    }*/
+    }
 
     public FisherBot()
     {

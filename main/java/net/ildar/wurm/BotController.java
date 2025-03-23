@@ -1,17 +1,17 @@
 package net.ildar.wurm;
 
-import net.ildar.wurm.bot.Bot;
-
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.jar.JarFile;
+import java.util.stream.Stream;
 
 public class BotController {
     private static BotController instance;
     //The list of all bot implementations.
-    private List<BotRegistration> botList = new ArrayList<>();
-    private List<Bot> activeBots = new ArrayList<>();
+    private final List<BotRegistration> botList = new ArrayList<>();
     private boolean gPaused = false;
+    private final ClassLoader botClassLoader = new BotClassLoader(Thread.currentThread().getContextClassLoader());
 
     public static BotController getInstance() {
         if (instance == null)
@@ -23,121 +23,129 @@ public class BotController {
         initBotRegistrations();
     }
 
-
-    private void initBotRegistrations() {
+    private synchronized void initBotRegistrations() {
         String classResourcePath = Mod.class.getName().replace('.', '/');
         String jarFileName = Utils.getResource("/" + classResourcePath + ".class").toString();
-        final String jarFilePrefix = "jar:file:/";
+        final String jarFilePrefix = "jar:file:";
         jarFileName = jarFileName
                 .substring(jarFileName.indexOf(jarFilePrefix) + jarFilePrefix.length(), jarFileName.lastIndexOf("!/"))
                 .replaceAll("%.{2}", " ");
-        try {
-            JarFile jarFile = new JarFile(jarFileName);
+        Utils.consolePrint("loading from jar: " + jarFileName);
+        try (JarFile jarFile = new JarFile(jarFileName)) {
             jarFile.stream().forEach((jarEntry) -> {
-                int extPos = jarEntry.getName().lastIndexOf(".class");
-                if (extPos == -1)
+                if (!jarEntry.getName().endsWith(".class"))
                     return;
-                String jarEntryClassName = jarEntry.getName().substring(0, extPos).replaceAll("/", ".");
+                String jarEntryClassName = jarEntry.getName()
+                        .substring(0, jarEntry.getName().length() - ".class".length())
+                        .replaceAll("/", ".");
                 try {
-                    Class<?> jarEntryClass = Class.forName(jarEntryClassName);
-                    if (jarEntryClass.equals(Bot.class))
+                    Class<?> jarEntryClass = Class.forName(jarEntryClassName, true, botClassLoader);
+                    if (!jarEntryClassName.endsWith("Bot") || jarEntryClassName.endsWith(".Bot")) {
                         return;
-                    if (Bot.class.isAssignableFrom(jarEntryClass)) {
-                        botList.add((BotRegistration) jarEntryClass.getDeclaredMethod("getRegistration").invoke(null));
                     }
+                    Utils.consolePrint("registering bot " + jarEntryClassName);
+                    BotRegistration newRegistration = (BotRegistration) jarEntryClass.getDeclaredMethod("getRegistration").invoke(null);
+                    botList.add(newRegistration);
+
                 } catch (ClassNotFoundException e) {
                     Utils.consolePrint("Couldn't find a class with name " + jarEntryClassName);
                 } catch (Exception e) {
                     Utils.consolePrint(e.toString());
-                    e.printStackTrace();
                 }
             });
         } catch (IOException e) {
             Utils.consolePrint(e.toString());
-            e.printStackTrace();
         }
     }
 
-    public void handleInput(String data[]) {
-        String usageString = getBotUsageString();
-
+    public synchronized void handleInput(String[] data) {
         if (data.length < 1) {
-            Utils.consolePrint(usageString);
+            Utils.consolePrint(getBotUsageString());
+            botList.stream()
+                    .map(br -> br.getAbbreviation() + ": " + br.getDescription())
+                    .forEachOrdered(Utils::consolePrint);
             Utils.writeToConsoleInputLine(Mod.ConsoleCommand.bot.name() + " ");
             return;
         }
-        if (data[0].equals("off")) {
-            deactivateAllBots();
-            return;
+        switch (data[0]) {
+            case "reload":
+                reloadAllBots();
+                return;
+            case "off":
+                deactivateAllBots();
+                return;
+            case "pause":
+                pauseAllBots();
+                Utils.writeToConsoleInputLine(Mod.ConsoleCommand.bot.name() + " pause");
+                return;
         }
-        if (data[0].equals("pause")) {
-            pauseAllBots();
-            Utils.writeToConsoleInputLine(Mod.ConsoleCommand.bot.name() + " pause");
-            return;
-        }
-        Class<? extends Bot> botClass = getBotClass(data[0]);
-        if (botClass == null) {
+        BotProxy proxy = getBotProxy(data[0]);
+        if (proxy == null) {
             Utils.consolePrint("Didn't find a bot with abbreviation \"" + data[0] + "\"");
-            Utils.consolePrint(usageString);
+            Utils.consolePrint(getBotUsageString());
             return;
         }
 
         if (data.length == 1) {
-            printBotDescription(botClass);
+            printBotDescription(proxy);
             Utils.writeToConsoleInputLine(Mod.ConsoleCommand.bot.name() + " " + data[0] + " ");
             return;
         }
-        if (isInstantiated(botClass)) {
-            Bot botInstance = getInstance(botClass);
-            if (botInstance.isInterrupted()) {
-                Utils.consolePrint(botClass.getSimpleName() + " is trying to stop");
-            } else if (data[1].equals("on")) {
-                Utils.consolePrint(botClass.getSimpleName() + " is already on");
+        if (isActive(proxy)) {
+            if (data[1].equals("on")) {
+                Utils.consolePrint(proxy.getSimpleName() + " is already on");
             } else {
                 try {
-                    botInstance.handleInput(Arrays.copyOfRange(data, 1, data.length));
+                    proxy.handleInput(Arrays.copyOfRange(data, 1, data.length));
                 } catch (Exception e) {
-                    Utils.consolePrint("Unable to configure  " + botClass.getSimpleName());
-                    e.printStackTrace();
+                    Utils.consolePrint("Unable to configure  " + proxy.getSimpleName());
+                    Utils.consolePrint(e.toString());
                 }
             }
         } else {
             if (data[1].equals("on")) {
-                Bot botInstance = getInstance(botClass);
-                if (botInstance != null) {
-                    botInstance.start();
-                    Utils.consolePrint(botClass.getSimpleName() + " is on!");
-                    printBotDescription(botClass);
-                } else {
-                    Utils.consolePrint("Internal error on bot activation");
-                }
+                proxy.instantiate();
+                proxy.start();
+                Utils.consolePrint(proxy.getSimpleName() + " is on!");
+                printBotDescription(proxy);
             } else {
-                Utils.consolePrint(botClass.getSimpleName() + " is not running!");
+                Utils.consolePrint(proxy.getSimpleName() + " is not running!");
             }
         }
         Utils.writeToConsoleInputLine(Mod.ConsoleCommand.bot.name() + " " + data[0] + " ");
     }
 
-    public synchronized boolean isActive(Bot bot) {
-        return activeBots.contains(bot);
+    public Stream<BotProxy> getActiveBots() {
+        return botList.stream()
+                .map(BotRegistration::getProxy)
+                .filter(br -> br.isInstantiated() && !br.isInterrupted());
+    }
+
+    public synchronized boolean isActive(BotProxy bot) {
+        return getActiveBots().anyMatch(Predicate.isEqual(bot));
     }
 
     private synchronized void deactivateAllBots() {
-        List<Bot> bots = new ArrayList<>(activeBots);
-        bots.forEach(Bot::deactivate);
+        getActiveBots().forEach(BotProxy::deactivate);
     }
 
-    public synchronized void onBotInterruption(Bot bot) {
-        activeBots.remove(bot);
+    private synchronized void reloadAllBots() {
+        deactivateAllBots();
+        botList.clear();
+        initBotRegistrations();
+    }
+
+    public synchronized void onBotInterrupted(Class<? extends Thread> botClass) {
+        botList.stream().map(BotRegistration::getProxy).filter(bp -> bp.getBotClass() == botClass).forEach(BotProxy::deinstantiate);
     }
 
     private synchronized void pauseAllBots() {
-        if (activeBots.size() > 0) {
+        if (getActiveBots().findFirst().isPresent()) {
             gPaused = !gPaused;
             if (gPaused) {
-                activeBots.forEach(Bot::setPaused);
+                getActiveBots().forEach(BotProxy::setPaused);
             } else {
-                activeBots.forEach(Bot::setResumed);
+                getActiveBots().forEach(BotProxy::setResumed);
             }
             Utils.consolePrint("All bots have been " + (gPaused ? "paused!" : "resumed!"));
         } else {
@@ -145,40 +153,15 @@ public class BotController {
         }
     }
 
-    //this method is being invoked from com.wurmonline.client.renderer.cell.GroundItemCellRenderable
-    @SuppressWarnings("WeakerAccess")
-    public synchronized boolean isInstantiated(Class<? extends Bot> botClass) {
-        return activeBots.stream().anyMatch(bot -> bot.getClass().equals(botClass));
-    }
-
-    //this method is being invoked from com.wurmonline.client.renderer.cell.GroundItemCellRenderable
-    @SuppressWarnings("WeakerAccess")
-    public synchronized <T extends Bot> T getInstance(Class<T> botClass) {
-        T instance = null;
-        try {
-            Optional<Bot> optionalBot = activeBots.stream().filter(bot -> bot.getClass().equals(botClass)).findAny();
-            if (!optionalBot.isPresent()) {
-                instance = botClass.newInstance();
-                activeBots.add(instance);
-            } else
-                //noinspection unchecked
-                instance = (T) optionalBot.get();
-        } catch (InstantiationException | IllegalAccessException | NoSuchElementException | NullPointerException e) {
-            e.printStackTrace();
-        }
-        return instance;
-    }
-
-    public void printBotDescription(Class<? extends Bot> botClass) {
-        BotRegistration botRegistration = getBotRegistration(botClass);
+    public void printBotDescription(BotProxy proxy) {
+        BotRegistration botRegistration = getBotRegistration(proxy);
         String description = "no description";
         if (botRegistration != null)
             description = botRegistration.getDescription();
-        Utils.consolePrint("=== " + botClass.getSimpleName() + " ===");
+        Utils.consolePrint("=== " + proxy.getSimpleName() + " ===");
         Utils.consolePrint(description);
-        if (isInstantiated(botClass)) {
-            Bot botInstance = getInstance(botClass);
-            Utils.consolePrint(botInstance.getUsageString());
+        if (isActive(proxy)) {
+            proxy.printVerboseUsageString();
         } else {
             String abbreviation = "*";
             if (botRegistration != null)
@@ -195,16 +178,16 @@ public class BotController {
         return result.toString();
     }
 
-    private Class<? extends Bot> getBotClass(String abbreviation) {
+    private BotProxy getBotProxy(String abbreviation) {
         for (BotRegistration botRegistration : botList)
             if (botRegistration.getAbbreviation().equals(abbreviation))
-                return botRegistration.getBotClass();
+                return botRegistration.getProxy();
         return null;
     }
 
-    public BotRegistration getBotRegistration(Class<? extends Bot> botClass) {
+    public BotRegistration getBotRegistration(BotProxy proxy) {
         for (BotRegistration botRegistration : botList) {
-            if (botRegistration.getBotClass().equals(botClass))
+            if (botRegistration.getProxy() == proxy)
                 return botRegistration;
         }
         return null;

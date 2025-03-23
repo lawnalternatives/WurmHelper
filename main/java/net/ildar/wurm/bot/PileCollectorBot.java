@@ -16,7 +16,7 @@ import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class PileCollector extends Bot {
+public class PileCollectorBot extends Bot {
     private final float MAX_DISTANCE = 4;
     private Set<Long> openedPiles = new HashSet<>();
     private InventoryListComponent targetLc;
@@ -25,14 +25,14 @@ public class PileCollector extends Bot {
     private String targetItemName = "dirt";
 
     public static BotRegistration getRegistration() {
-        return new BotRegistration(PileCollector.class,
+        return new BotRegistration(PileCollectorBot.class,
                 "Collects piles of items to bulk containers. Default name for target items is \"dirt\"", "pc");
     }
 
-    public PileCollector() {
-        registerInputHandler(PileCollector.InputKey.stn, this::setTargetName);
-        registerInputHandler(PileCollector.InputKey.st, this::setTargetInventoryName);
-        registerInputHandler(PileCollector.InputKey.stcc, this::setContainerCapacity);
+    public PileCollectorBot() {
+        registerInputHandler(PileCollectorBot.InputKey.stn, this::setTargetName);
+        registerInputHandler(PileCollectorBot.InputKey.st, this::setTargetInventoryName);
+        registerInputHandler(PileCollectorBot.InputKey.stcc, this::setContainerCapacity);
     }
 
     @Override
@@ -112,7 +112,7 @@ public class PileCollector extends Bot {
 
     private void setTargetName(String []input) {
         if (input == null || input.length == 0) {
-            printInputKeyUsageString(PileCollector.InputKey.stn);
+            printInputKeyUsageString(PileCollectorBot.InputKey.stn);
             return;
         }
         StringBuilder targetName = new StringBuilder(input[0]);
@@ -148,7 +148,7 @@ public class PileCollector extends Bot {
 
     private void setContainerCapacity(String []input) {
         if (input == null || input.length == 0) {
-            printInputKeyUsageString(PileCollector.InputKey.stcc);
+            printInputKeyUsageString(PileCollectorBot.InputKey.stcc);
             return;
         }
         try {

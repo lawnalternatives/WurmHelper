@@ -43,7 +43,7 @@ public abstract class Bot extends Thread {
             Utils.consolePrint(e.toString());
         }
         unregisterMessageProcessors();
-        BotController.getInstance().onBotInterruption(this);
+        BotController.getInstance().onBotInterrupted(getClass());
         Utils.consolePrint(this.getClass().getSimpleName() + " was stopped");
     }
 
@@ -51,13 +51,8 @@ public abstract class Bot extends Thread {
         return new BotRegistration(Bot.class, "Bot didn't provide a description", "?");
     }
 
-    /**
-     * The bot is stopping by interruption(see {@link #deactivate()}.
-     * Sometimes the interruption status of a thread is cleared(ignored,lost) in the bot(the bot developer should avoid that),
-     * so we check current bot instance for presence in active bot list
-     */
     boolean isActive() {
-        return BotController.getInstance().isActive(this) && !isInterrupted();
+        return !isInterrupted();
     }
 
     synchronized void waitOnPause() throws InterruptedException {
@@ -89,43 +84,35 @@ public abstract class Bot extends Thread {
     }
 
     public void deactivate() {
-        if (!super.isAlive()) {
-            BotController.getInstance().onBotInterruption(this);
-            return;
-        }
         Utils.consolePrint("Deactivating " + getClass().getSimpleName());
+        BotController.getInstance().onBotInterrupted(getClass());
         interrupt();
     }
 
-    private String getAbbreviation() {
-        BotRegistration botRegistration = BotController.getInstance().getBotRegistration(this.getClass());
-        if (botRegistration == null) return null;
-        return botRegistration.getAbbreviation();
+    public String getUsageString() {
+        return "Usage: " +
+                this.getClass().getSimpleName() +
+                " {" +
+                inputHandlers
+                        .keySet()
+                        .stream()
+                        .map(InputKey::getName)
+                        .sorted(Comparator.naturalOrder())
+                        .collect(Collectors.joining("|")) +
+                "}";
     }
 
-    public String getUsageString() {
-        StringBuilder output = new StringBuilder();
-        output
-                .append("Usage: ")
-                .append(Mod.ConsoleCommand.bot.name())
-                .append(" ")
-                .append(getAbbreviation())
-                .append(" {");
-        boolean firstInputKeyString = true;
-        List<String> sortedInputKeys = inputHandlers.keySet().stream().map(InputKey::getName).sorted(Comparator.naturalOrder()).collect(Collectors.toList());
-        for (String inputKey : sortedInputKeys) {
-            if (firstInputKeyString)
-                firstInputKeyString = false;
-            else
-                output.append("|");
-            output.append(inputKey);
-        }
-        output.append("}");
-        return output.toString();
+    public void printVerboseUsageString() {
+        Utils.consolePrint(getUsageString());
+        inputHandlers
+                .keySet()
+                .stream()
+                .sorted(Comparator.comparing(InputKey::getName))
+                .forEachOrdered(ik -> Utils.consolePrint(ik.getName() + " " + ik.getUsage() + ": " + ik.getDescription()));
     }
 
     void printInputKeyUsageString(InputKey inputKey) {
-        Utils.consolePrint("Usage: " + Mod.ConsoleCommand.bot.name() + " " + getAbbreviation() + " " + inputKey.getName() + " " + inputKey.getUsage());
+        Utils.consolePrint("Usage: " + this.getClass().getSimpleName() + " " + inputKey.getName() + " " + inputKey.getUsage());
     }
 
     /**
@@ -139,7 +126,6 @@ public abstract class Bot extends Thread {
         InputHandler inputHandler = getInputHandler(data[0]);
         if (inputHandler == null) {
             Utils.consolePrint("Unknown key - " + data[0]);
-            BotController.getInstance().printBotDescription(this.getClass());
             return;
         }
         String[] handlerParameters = null;
@@ -156,7 +142,7 @@ public abstract class Bot extends Thread {
         InputKey inputKey = getInputKey(input[0]);
         if (inputKey == null) {
             Utils.consolePrint("Unknown key");
-            Utils.consolePrint(getUsageString());
+            printVerboseUsageString();
             return;
         }
         Utils.consolePrint(inputKey.getDescription());
