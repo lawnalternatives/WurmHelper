@@ -13,10 +13,12 @@ public class BotController {
     private boolean gPaused = false;
     private final ClassLoader botClassLoader = new BotClassLoader(Thread.currentThread().getContextClassLoader());
 
+    private static class InstanceHolder {
+        private static final BotController instance = new BotController();
+    }
+
     public static BotController getInstance() {
-        if (instance == null)
-            instance = new BotController();
-        return instance;
+        return InstanceHolder.instance;
     }
 
     private BotController() {
