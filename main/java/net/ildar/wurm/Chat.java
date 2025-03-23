@@ -23,6 +23,7 @@ public class Chat {
         messageProcessors.remove(messageProcessor);
     }
 
+    @SuppressWarnings("unchecked")
     public static void onMessage(String context, Object input, boolean silent) {
         String message;
         if (input instanceof List) {
@@ -47,10 +48,8 @@ public class Chat {
 
     private static String pruneMulticolorString(List<MulticolorLineSegment> multicolorString) {
         StringBuilder sb = new StringBuilder();
-        for (Iterator<MulticolorLineSegment> iter = multicolorString.iterator(); iter.hasNext(); ) {
-            MulticolorLineSegment segment = iter.next();
+        for (MulticolorLineSegment segment : multicolorString)
             sb.append(segment.getText());
-        }
         return sb.toString();
     }
 
