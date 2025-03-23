@@ -10,7 +10,7 @@ import net.ildar.wurm.Mod;
 import net.ildar.wurm.Utils;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 
-public class FisherBot extends Bot
+public class FisherBot extends BotBase
 {
     private boolean repairInstrument;
     private boolean lineBreaks;
@@ -122,7 +122,7 @@ public class FisherBot extends Bot
     }
 
 
-    private enum InputKey implements Bot.InputKey {
+    private enum InputKey implements BotBase.InputKey {
         r("Toggle the source item repairing(on the left side of crafting window). " +
                 "Usually it is an instrument. When the source item gets 10% damage player will repair it automatically", ""),
         line("Replace a fishing line on the current rod",

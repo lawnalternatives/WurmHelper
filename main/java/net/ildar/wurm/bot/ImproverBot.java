@@ -16,7 +16,7 @@ import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 
 import java.util.*;
 
-public class ImproverBot extends Bot {
+public class ImproverBot extends BotBase {
     private List<Tool> tools = new ArrayList<>();
     private List<InventoryListComponent> targets = new ArrayList<>();
     private float staminaThreshold;
@@ -404,7 +404,7 @@ public class ImproverBot extends Bot {
         Utils.consolePrint("A new inventory was added");
     }
 
-    enum InputKey implements Bot.InputKey {
+    enum InputKey implements BotBase.InputKey {
         s("Set the stamina threshold. Player will not do any actions if his stamina is lower than specified threshold",
                 "threshold(float value between 0 and 1)"),
         at("Add new inventory(under mouse cursor). Selected items in this inventory will be improved.", ""),

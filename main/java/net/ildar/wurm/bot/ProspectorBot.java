@@ -11,7 +11,7 @@ import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 
 import java.util.InputMismatchException;
 
-public class ProspectorBot extends Bot {
+public class ProspectorBot extends BotBase {
     private float staminaThreshold;
     private int clicks;
 
@@ -104,7 +104,7 @@ public class ProspectorBot extends Bot {
         Utils.consolePrint(getClass().getSimpleName() + " will do " + clicks + " clicks each time");
     }
 
-    private enum InputKey implements Bot.InputKey {
+    private enum InputKey implements BotBase.InputKey {
         s("Set the stamina threshold. Player will not do any actions if his stamina is lower than specified threshold",
                 "threshold(float value between 0 and 1)"),
         c("Change the amount of clicks bot will do each time", "n(integer value)");

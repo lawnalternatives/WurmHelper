@@ -12,7 +12,7 @@ import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 
 import java.util.*;
 
-public class GroundItemGetterBot extends Bot {
+public class GroundItemGetterBot extends BotBase {
     private Set <String> itemNames = new HashSet<>();
     private float distance = 4;
 
@@ -106,7 +106,7 @@ public class GroundItemGetterBot extends Bot {
         Utils.consolePrint("Current item set in " + this.getClass().getSimpleName() + " - " + itemNames.toString());
     }
 
-    enum InputKey implements Bot.InputKey {
+    enum InputKey implements BotBase.InputKey {
         d("Set the distance the bot should look around player in search for items",
                 "distance(in meters, 1 tile is 4 meters)"),
         a("Add new item name to search list", "item_name");

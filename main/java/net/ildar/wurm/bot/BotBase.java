@@ -7,7 +7,15 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public abstract class Bot extends Thread {
+/**
+ * Abstract base class for all "Bots".
+ * <p>
+ * NB: The names of classes in this package are significant: any class ending with "Bot"
+ * is assumed to derive from BotBase, and is loaded into the BotController's list of
+ * bots dynamically via introspection. The names of BotBase itself and any helper classes must
+ * not end with "Bot".
+ */
+public abstract class BotBase extends Thread {
     /**
      * A timeout an each bot implementation should use between iterations
      */
@@ -22,7 +30,7 @@ public abstract class Bot extends Thread {
     private List<Chat.MessageProcessor> registeredMessageProcessors = new ArrayList<>();
     private boolean paused = false;
 
-    public Bot() {
+    public BotBase() {
         //register standard input handlers
         registerInputHandler(InputKeyBase.t, this::handleTimeoutChange);
         registerInputHandler(InputKeyBase.off, inputs -> deactivate());
@@ -48,7 +56,7 @@ public abstract class Bot extends Thread {
     }
 
     public static BotRegistration getRegistration() {
-        return new BotRegistration(Bot.class, "Bot didn't provide a description", "?");
+        return new BotRegistration(BotBase.class, "Bot didn't provide a description", "?");
     }
 
     boolean isActive() {

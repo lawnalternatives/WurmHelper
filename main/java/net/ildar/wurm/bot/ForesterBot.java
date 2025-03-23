@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class ForesterBot extends Bot {
+public class ForesterBot extends BotBase {
     static String DEFAULT_CONTAINER_NAME = "backpack";
     private float staminaThreshold;
     private int maxActions;
@@ -385,7 +385,7 @@ public class ForesterBot extends Bot {
         Utils.consolePrint("Current threshold for stamina is " + staminaThreshold);
     }
 
-    enum InputKey implements Bot.InputKey {
+    enum InputKey implements BotBase.InputKey {
         s("Set the stamina threshold. Player will not do any actions if his stamina is lower than specified threshold",
                 "threshold(float value between 0 and 1)"),
         ca("Toggle the cutting of sprouts from all trees", ""),

@@ -10,7 +10,7 @@ import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 
 import java.util.*;
 
-public class HealingBot extends Bot {
+public class HealingBot extends BotBase {
     private final Set<String> WOUND_NAMES = new HashSet<>(Arrays.asList("Cut", "Bite", "Bruise", "Burn", "Hole", "Acid", "Infection"));
     private float minDamage = 0;
 
@@ -89,7 +89,7 @@ public class HealingBot extends Bot {
     }
 
 
-    private enum InputKey implements Bot.InputKey {
+    private enum InputKey implements BotBase.InputKey {
         md("Set the minimum damage of the wound to be treated", "min_damage");
 
         private String description;

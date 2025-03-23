@@ -14,7 +14,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class CrafterBot extends Bot {
+public class CrafterBot extends BotBase {
     private float staminaThreshold;
     private boolean repairInstrument = true;
     private String targetName;
@@ -394,7 +394,7 @@ public class CrafterBot extends Bot {
         Utils.consolePrint("The source was set to X - " + sourceX + " Y - " + sourceY);
     }
 
-    private enum InputKey implements Bot.InputKey {
+    private enum InputKey implements BotBase.InputKey {
         r("Toggle the source item repairing(on the left side of crafting window). " +
                 "Usually it is an instrument. When the source item gets 10% damage player will repair it automatically", ""),
         st("Set the target item name. " + CrafterBot.class.getSimpleName()+ " will place item with provided name from your inventory to the target slot(on the right side of crafting window)",

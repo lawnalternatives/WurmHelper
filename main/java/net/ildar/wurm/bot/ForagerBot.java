@@ -14,7 +14,7 @@ import net.ildar.wurm.Utils;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class ForagerBot extends Bot {
+public class ForagerBot extends BotBase {
     static String DEFAULT_CONTAINER_NAME = "backpack";
     private static Set<String> forageSet = new HashSet<>(Arrays.asList(
             "oregano","rosemary","lingonberry","pumpkin",
@@ -516,7 +516,7 @@ public class ForagerBot extends Bot {
         Utils.consolePrint("Current threshold for stamina is " + staminaThreshold);
     }
 
-    enum InputKey implements Bot.InputKey {
+    enum InputKey implements BotBase.InputKey {
         s("Set the stamina threshold. Player will not do any actions if his stamina is lower than specified threshold",
                 "threshold(float value between 0 and 1)"),
         g("Toggle the grass gathering", ""),

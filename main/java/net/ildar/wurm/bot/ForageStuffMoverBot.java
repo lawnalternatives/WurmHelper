@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ForageStuffMoverBot extends Bot {
+public class ForageStuffMoverBot extends BotBase {
     private List<Long> targets = new ArrayList<>();
     private boolean moveRareItems;
     private boolean notMoveRocks;
@@ -72,7 +72,7 @@ public class ForageStuffMoverBot extends Bot {
         Utils.consolePrint("Rocks will be " + (notMoveRocks?"NOT":"") + " moved");
     }
 
-    enum InputKey implements Bot.InputKey {
+    enum InputKey implements BotBase.InputKey {
         at("Add new target item. Foragable and botanizable items will be moved to that destination", ""),
         r("Toggle moving of rare items", ""),
         mr("Toggle moving of rocks", "");

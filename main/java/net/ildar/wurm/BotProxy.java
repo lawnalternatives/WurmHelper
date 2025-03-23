@@ -2,8 +2,6 @@ package net.ildar.wurm;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public final class BotProxy {
     private final Class<? extends Thread> botClass;

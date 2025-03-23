@@ -8,7 +8,7 @@ import net.ildar.wurm.Mod;
 import net.ildar.wurm.Utils;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 
-public class MeditationBot extends Bot {
+public class MeditationBot extends BotBase {
     private long lastRepair;
     private long repairTimeout;
     private float staminaThreshold;
@@ -135,7 +135,7 @@ public class MeditationBot extends Bot {
         Utils.consolePrint(getClass().getSimpleName() + " will do " + clicks + " actions each time");
     }
 
-    private enum InputKey implements Bot.InputKey {
+    private enum InputKey implements BotBase.InputKey {
         s("Set the stamina threshold. Player will not do any actions if his stamina is lower than specified threshold",
                 "threshold(float value between 0 and 1)"),
         c("Set the amount of actions the bot will do each time", "c(integer value)"),

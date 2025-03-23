@@ -16,7 +16,7 @@ import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class PileCollectorBot extends Bot {
+public class PileCollectorBot extends BotBase {
     private final float MAX_DISTANCE = 4;
     private Set<Long> openedPiles = new HashSet<>();
     private InventoryListComponent targetLc;
@@ -159,7 +159,7 @@ public class PileCollectorBot extends Bot {
         }
     }
 
-    private enum InputKey implements Bot.InputKey {
+    private enum InputKey implements BotBase.InputKey {
         stn("Set the name for target items. Default name is \"dirt\"", "name"),
         st("Set the target bulk inventory to put items to. Provide an optional name of containers inside inventory. Default is \"large crate\"", "[name]"),
         stcc("Set the capacity for target container. Default value is 300", "capacity(integer value)");

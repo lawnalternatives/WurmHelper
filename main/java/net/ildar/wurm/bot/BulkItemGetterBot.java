@@ -7,7 +7,7 @@ import net.ildar.wurm.Utils;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BulkItemGetterBot extends Bot {
+public class BulkItemGetterBot extends BotBase {
     public static boolean closeBMLWindow;
     private List<SourceItem> sources = new ArrayList<>();
     private List<Long> targets = new ArrayList<>();
@@ -138,7 +138,7 @@ public class BulkItemGetterBot extends Bot {
         Utils.consolePrint("Added new source from the point (" + sourceItem.x + ", " + sourceItem.y + ")");
     }
 
-    private enum InputKey implements Bot.InputKey {
+    private enum InputKey implements BotBase.InputKey {
         as("Add the source(item in bulk storage) the user is currenly pointing to", ""),
         at("Add the target item the user is currently pointing to", ""),
         asid("Add the source(item in bulk storage) with provided id", "id"),

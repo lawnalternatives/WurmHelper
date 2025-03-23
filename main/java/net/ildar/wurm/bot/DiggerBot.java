@@ -16,7 +16,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public class DiggerBot extends Bot{
+public class DiggerBot extends BotBase {
     private final int STEPS = 5;
 
     private long stepDuration;
@@ -545,7 +545,7 @@ public class DiggerBot extends Bot{
         int y;
     }
 
-    private enum InputKey implements Bot.InputKey {
+    private enum InputKey implements BotBase.InputKey {
         s("Set the stamina threshold. Player will not do any actions if his stamina is lower than specified threshold",
                 "threshold(float value between 0 and 1)"),
         d("Toggle the digging until the specified height is reached", "height(in slopes)"),

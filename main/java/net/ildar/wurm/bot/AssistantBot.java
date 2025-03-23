@@ -16,7 +16,7 @@ import java.util.InputMismatchException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class AssistantBot extends Bot {
+public class AssistantBot extends BotBase {
     private Enchant spellToCast = Enchant.DISPEL;
     private boolean casting;
     private long statuetteId;
@@ -756,7 +756,7 @@ public class AssistantBot extends Bot {
 
     }
 
-    private enum InputKey implements Bot.InputKey {
+    private enum InputKey implements BotBase.InputKey {
         w("Toggle automatic drinking of the liquid the user pointing at", ""),
         wid("Toggle automatic drinking of liquid with provided id", "id"),
         ls("Show the list of available spells for autocasting", ""),

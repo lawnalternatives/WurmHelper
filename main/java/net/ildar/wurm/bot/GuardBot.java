@@ -10,7 +10,7 @@ import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
 
-public class GuardBot extends Bot {
+public class GuardBot extends BotBase {
     private static Set <String> keywords;
     private static long lastEvent;
 
@@ -130,7 +130,7 @@ public class GuardBot extends Bot {
         Utils.consolePrint("Alarm sound is now \"" + customSound + "\"");
     }
 
-    private enum InputKey implements Bot.InputKey {
+    private enum InputKey implements BotBase.InputKey {
         at("Set the alarm timeout. " +
                 "Alarm will be raised if no valid messages was processed during that period",
                 "timeout(in milliseconds)"),

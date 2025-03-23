@@ -17,7 +17,7 @@ import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class MinerBot extends Bot {
+public class MinerBot extends BotBase {
     private SmeltingOptions smeltingOptions = new SmeltingOptions();
     private MiningMode miningMode = MiningMode.Unknown;
     private float staminaThreshold;
@@ -694,7 +694,7 @@ public class MinerBot extends Bot {
         FixedTile
     }
 
-    private enum InputKey implements Bot.InputKey {
+    private enum InputKey implements BotBase.InputKey {
         s("Set the stamina threshold. Player will not do any actions if his stamina is lower than specified threshold",
                 "threshold(float value between 0 and 1)"),
         c("Change the amount of clicks bot will do each time", "n(integer value)"),

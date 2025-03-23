@@ -15,7 +15,7 @@ import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class FarmerBot extends Bot {
+public class FarmerBot extends BotBase {
     private float staminaThreshold;
     private AreaAssistant areaAssistant = new AreaAssistant(this);
     private boolean farmTending;
@@ -280,7 +280,7 @@ public class FarmerBot extends Bot {
         }
     }
 
-    enum InputKey implements Bot.InputKey {
+    enum InputKey implements BotBase.InputKey {
         s("Set the stamina threshold. Player will not do any actions if his stamina is lower than specified threshold",
                 "threshold(float value between 0 and 1)"),
         r("Toggle the tool repairing", ""),

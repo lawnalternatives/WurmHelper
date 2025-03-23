@@ -15,7 +15,7 @@ import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 
 import java.util.Map;
 
-public class ArcherBot extends Bot {
+public class ArcherBot extends BotBase {
     private static boolean stringBreaks;
 
     private float staminaThreshold;
@@ -134,7 +134,7 @@ public class ArcherBot extends Bot {
         stringBreaks = true;
     }
 
-    private enum InputKey implements Bot.InputKey {
+    private enum InputKey implements BotBase.InputKey {
         s("Set the stamina threshold. Player will not do any actions if his stamina is lower than specified threshold",
                 "threshold(float value between 0 and 1)"),
         string("String the current bow with a string",

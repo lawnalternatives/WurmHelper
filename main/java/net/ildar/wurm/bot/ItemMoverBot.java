@@ -9,7 +9,7 @@ import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 
 import java.util.*;
 
-public class ItemMoverBot extends Bot {
+public class ItemMoverBot extends BotBase {
     private Set <String> itemNames;
     private TargetType targetType;
     private Map <String, Float> itemMaximumWeights;
@@ -274,7 +274,7 @@ public class ItemMoverBot extends Bot {
         Utils.consolePrint("Current item set - " + itemNames.toString());
     }
 
-    private enum InputKey implements Bot.InputKey {
+    private enum InputKey implements BotBase.InputKey {
         clear("Clear item list",""),
         st("Set the target item(under mouse pointer). Items from your inventory will be moved inside this item if it is a container or next to it otherwise.", ""),
         stid("Set the id of target item. Items from your inventory will be moved inside this item if it is a container or next to it otherwise.", "id"),

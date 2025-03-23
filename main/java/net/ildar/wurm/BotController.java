@@ -40,9 +40,8 @@ public class BotController {
                         .replaceAll("/", ".");
                 try {
                     Class<?> jarEntryClass = Class.forName(jarEntryClassName, true, botClassLoader);
-                    if (!jarEntryClassName.endsWith("Bot") || jarEntryClassName.endsWith(".Bot")) {
+                    if (!jarEntryClassName.endsWith("Bot"))
                         return;
-                    }
                     Utils.consolePrint("registering bot " + jarEntryClassName);
                     BotRegistration newRegistration = (BotRegistration) jarEntryClass.getDeclaredMethod("getRegistration").invoke(null);
                     botList.add(newRegistration);

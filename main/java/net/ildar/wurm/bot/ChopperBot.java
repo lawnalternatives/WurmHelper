@@ -14,7 +14,7 @@ import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import java.util.ConcurrentModificationException;
 import java.util.Map;
 
-public class ChopperBot extends Bot {
+public class ChopperBot extends BotBase {
     private static float distance = 4;
     private AreaAssistant areaAssistant = new AreaAssistant(this);
     private float staminaThreshold;
@@ -142,7 +142,7 @@ public class ChopperBot extends Bot {
         Utils.consolePrint(getClass().getSimpleName() + " will do " + clicks + " chops each time");
     }
 
-    private enum InputKey implements Bot.InputKey {
+    private enum InputKey implements BotBase.InputKey {
         s("Set the stamina threshold. Player will not do any actions if his stamina is lower than specified threshold",
                 "threshold(float value between 0 and 1)"),
         d("Set the distance the bot should look around player in search for a felled tree",

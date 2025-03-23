@@ -10,7 +10,7 @@ class AreaAssistant {
     private int moveRightDistance = 3;//in tiles
     private long stepTimeout = 1000;
 
-    private Bot bot;
+    private BotBase bot;
     private int height = 0, width = 0;
 
     //start point - bottom left corner of area
@@ -20,7 +20,7 @@ class AreaAssistant {
 
     private boolean turnedRight = false;
 
-    AreaAssistant(Bot bot) {
+    AreaAssistant(BotBase bot) {
         this.bot = bot;
         bot.registerInputHandler(InputKey.area, this::toggleAreaTour);
         bot.registerInputHandler(InputKey.area_speed, this::setAreaModeSpeed);
@@ -168,7 +168,7 @@ class AreaAssistant {
         }
     }
 
-    private enum InputKey implements Bot.InputKey {
+    private enum InputKey implements BotBase.InputKey {
         area("Toggle the area processing mode. ", "tiles_ahead tiles_to_the_right"),
         area_speed("Set the speed of moving for area mode. Default value is 1 second per tile.", "speed(float value)");
 

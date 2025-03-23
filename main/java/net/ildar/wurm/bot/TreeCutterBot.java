@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 
-public class TreeCutterBot extends Bot{
+public class TreeCutterBot extends BotBase {
     private float staminaThreshold;
     private int maxActions;
 
@@ -263,7 +263,7 @@ public class TreeCutterBot extends Bot{
             Utils.consolePrint(age.name + " " + age.name());
     }
 
-    private enum InputKey implements Bot.InputKey {
+    private enum InputKey implements BotBase.InputKey {
         s("Set the stamina threshold. Player will not do any actions if his stamina is lower than specified threshold",
                 "threshold(float value between 0 and 1)"),
         tt("Set tree types for chopping. Chop all trees by default", "birch oak"),

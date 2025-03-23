@@ -13,7 +13,7 @@ import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import java.lang.reflect.Method;
 import java.util.List;
 
-public class FlowerPlanterBot extends Bot {
+public class FlowerPlanterBot extends BotBase {
     private float staminaThreshold;
     private long sickleId;
     private long shovelId;
@@ -145,7 +145,7 @@ public class FlowerPlanterBot extends Bot {
         CULTIVATE
     }
 
-    private enum InputKey implements Bot.InputKey {
+    private enum InputKey implements BotBase.InputKey {
         s("Set the stamina threshold. Player will not do any actions if his stamina is lower than specified threshold",
                 "threshold(float value between 0 and 1)");
 
