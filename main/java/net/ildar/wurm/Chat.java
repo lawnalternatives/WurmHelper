@@ -41,6 +41,7 @@ public class Chat {
                 if (input instanceof List)
                     modifyCombatMessage((List<MulticolorLineSegment>) input);
             case ":Event":
+                // FIXME: route through BotProxy
                 GuardBot.processEvent(message);
                 break;
         }
