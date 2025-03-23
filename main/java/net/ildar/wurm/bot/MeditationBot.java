@@ -15,19 +15,19 @@ public class MeditationBot extends BotBase {
     private int clicks = 3;
     private boolean repairInitiated;
 
-    public static BotRegistration getRegistration() {
-        return new BotRegistration(MeditationBot.class,
-                "Meditates on the carpet. Assumes that there are no restrictions on meditation skill.", "md");
-    }
-
     public MeditationBot() {
         registerInputHandler(MeditationBot.InputKey.s, this::setStaminaThreshold);
         registerInputHandler(MeditationBot.InputKey.c, this::setClicksNumber);
         registerInputHandler(MeditationBot.InputKey.rt, this::setRepairTimeout);
     }
 
+    public static BotRegistration getRegistration() {
+        return new BotRegistration(MeditationBot.class,
+                "Meditates on the carpet. Assumes that there are no restrictions on meditation skill.", "md");
+    }
+
     @Override
-    protected void work() throws Exception{
+    protected void work() throws Exception {
         PickableUnit pickableUnit = ReflectionUtil.getPrivateField(Mod.hud.getSelectBar(),
                 ReflectionUtil.getField(Mod.hud.getSelectBar().getClass(), "selectedUnit"));
         if (pickableUnit == null || !pickableUnit.getHoverName().contains("meditation rug")) {
@@ -35,7 +35,7 @@ public class MeditationBot extends BotBase {
             deactivate();
             return;
         } else
-            Utils.consolePrint(this.getClass().getSimpleName() + " will use " + pickableUnit.getHoverName() );
+            Utils.consolePrint(this.getClass().getSimpleName() + " will use " + pickableUnit.getHoverName());
         long carpetId = pickableUnit.getId();
         setRepairTimeout(60000);
         setStaminaThreshold(0.5f);
@@ -43,13 +43,13 @@ public class MeditationBot extends BotBase {
         CreationWindow creationWindow = Mod.hud.getCreationWindow();
         Object progressBar = ReflectionUtil.getPrivateField(creationWindow,
                 ReflectionUtil.getField(creationWindow.getClass(), "progressBar"));
-        PlayerAction meditationAction = new PlayerAction("",(short) 384, PlayerAction.ANYTHING);
+        PlayerAction meditationAction = new PlayerAction("", (short) 384, PlayerAction.ANYTHING);
         while (isActive()) {
             waitOnPause();
             if (Math.abs(lastRepair - System.currentTimeMillis()) > repairTimeout) {
                 repairInitiated = false;
                 int count = 0;
-                while(!repairInitiated && count++ < 30) {
+                while (!repairInitiated && count++ < 30) {
                     Mod.hud.sendAction(PlayerAction.REPAIR, carpetId);
                     sleep(1000);
                 }
@@ -62,8 +62,8 @@ public class MeditationBot extends BotBase {
             float damage = Mod.hud.getWorld().getPlayer().getDamage();
             float progress = ReflectionUtil.getPrivateField(progressBar,
                     ReflectionUtil.getField(progressBar.getClass(), "progress"));
-            if ((stamina+damage) > staminaThreshold && progress == 0f) {
-                for(int i = 0; i < clicks; i++)
+            if ((stamina + damage) > staminaThreshold && progress == 0f) {
+                for (int i = 0; i < clicks; i++)
                     Mod.hud.sendAction(meditationAction, carpetId);
             }
             sleep(timeout);
@@ -77,7 +77,7 @@ public class MeditationBot extends BotBase {
                 || message.contains("you will start repairing"), () -> repairInitiated = true);
     }
 
-    private void setRepairTimeout(String []input){
+    private void setRepairTimeout(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(MeditationBot.InputKey.rt);
             return;
@@ -99,7 +99,7 @@ public class MeditationBot extends BotBase {
         Utils.consolePrint("Current carpet repair timeout is " + repairTimeout + " milliseconds");
     }
 
-    private void setStaminaThreshold(String input[]) {
+    private void setStaminaThreshold(String[] input) {
         if (input == null || input.length != 1)
             printInputKeyUsageString(MeditationBot.InputKey.s);
         else {
@@ -117,7 +117,7 @@ public class MeditationBot extends BotBase {
         Utils.consolePrint("Current threshold for stamina is " + staminaThreshold);
     }
 
-    private void setClicksNumber(String input[]) {
+    private void setClicksNumber(String[] input) {
         if (input == null || input.length != 1)
             printInputKeyUsageString(MeditationBot.InputKey.c);
         else {
@@ -141,8 +141,9 @@ public class MeditationBot extends BotBase {
         c("Set the amount of actions the bot will do each time", "c(integer value)"),
         rt("Set the meditation rug repair timeout", "timeout(in milliseconds)");
 
-        private String description;
-        private String usage;
+        private final String description;
+        private final String usage;
+
         InputKey(String description, String usage) {
             this.description = description;
             this.usage = usage;

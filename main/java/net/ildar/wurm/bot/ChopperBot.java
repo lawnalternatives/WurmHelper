@@ -16,15 +16,9 @@ import java.util.Map;
 
 public class ChopperBot extends BotBase {
     private static float distance = 4;
-    private AreaAssistant areaAssistant = new AreaAssistant(this);
+    private final AreaAssistant areaAssistant = new AreaAssistant(this);
     private float staminaThreshold;
     private int clicks;
-
-    public static BotRegistration getRegistration() {
-        return new BotRegistration(ChopperBot.class,
-                "Automatically chops felled trees near player",
-                "ch");
-    }
 
     public ChopperBot() {
         registerInputHandler(ChopperBot.InputKey.s, this::setStaminaThreshold);
@@ -35,8 +29,14 @@ public class ChopperBot extends BotBase {
         areaAssistant.setMoveRightDistance(1);
     }
 
+    public static BotRegistration getRegistration() {
+        return new BotRegistration(ChopperBot.class,
+                "Automatically chops felled trees near player",
+                "ch");
+    }
+
     @Override
-    public void work() throws Exception{
+    public void work() throws Exception {
         setStaminaThreshold(0.96f);
         setClicks(Utils.getMaxActionNumber());
         InventoryMetaItem hatchet = Utils.getInventoryItem("hatchet");
@@ -59,7 +59,7 @@ public class ChopperBot extends BotBase {
             float damage = Mod.hud.getWorld().getPlayer().getDamage();
             float progress = ReflectionUtil.getPrivateField(progressBar,
                     ReflectionUtil.getField(progressBar.getClass(), "progress"));
-            if ((stamina+damage) > staminaThreshold && progress == 0f) {
+            if ((stamina + damage) > staminaThreshold && progress == 0f) {
                 Map<Long, GroundItemCellRenderable> groundItems = ReflectionUtil.getPrivateField(sscc,
                         ReflectionUtil.getField(sscc.getClass(), "groundItems"));
                 float x = Mod.hud.getWorld().getPlayerPosX();
@@ -149,8 +149,9 @@ public class ChopperBot extends BotBase {
                 "distance(in meters)"),
         c("Set the amount of chops the bot will do each time", "c(integer value)");
 
-        private String description;
-        private String usage;
+        private final String description;
+        private final String usage;
+
         InputKey(String description, String usage) {
             this.description = description;
             this.usage = usage;

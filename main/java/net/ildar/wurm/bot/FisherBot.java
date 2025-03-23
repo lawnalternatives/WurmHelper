@@ -10,30 +10,26 @@ import net.ildar.wurm.Mod;
 import net.ildar.wurm.Utils;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 
-public class FisherBot extends BotBase
-{
+public class FisherBot extends BotBase {
     private boolean repairInstrument;
     private boolean lineBreaks;
 
-    public static BotRegistration getRegistration() {
-        return new BotRegistration(FisherBot.class,
-                "Catches and cuts fish", "fsh");
-    }
-
-    public FisherBot()
-    {
+    public FisherBot() {
         registerInputHandler(FisherBot.InputKey.r, input -> toggleRepairInstrument());
         registerInputHandler(FisherBot.InputKey.line, input -> putFishingLine());
 
         repairInstrument = true;
     }
 
+    public static BotRegistration getRegistration() {
+        return new BotRegistration(FisherBot.class,
+                "Catches and cuts fish", "fsh");
+    }
+
     @Override
-    public void work() throws Exception
-    {
+    public void work() throws Exception {
         InventoryMetaItem fishingRod = Utils.getInventoryItem("fine fishing rod");
-        if (fishingRod == null)
-        {
+        if (fishingRod == null) {
             fishingRod = Utils.getInventoryItem("fishing rod");
             if (fishingRod == null) {
                 Utils.consolePrint("You don't have any fishing rod");
@@ -43,7 +39,7 @@ public class FisherBot extends BotBase
 
         }
         Utils.consolePrint(this.getClass().getSimpleName() + " will use " + fishingRod.getBaseName());
-        lineBreaks=fishingRod.getBaseName().contains("unstrung");
+        lineBreaks = fishingRod.getBaseName().contains("unstrung");
         World world = Mod.hud.getWorld();
         long tileId = Tiles.getTileId(
                 world.getPlayerCurrentTileX(),
@@ -54,38 +50,30 @@ public class FisherBot extends BotBase
         CreationWindow creationWindow = Mod.hud.getCreationWindow();
         Object progressBar = ReflectionUtil.getPrivateField(creationWindow, ReflectionUtil.getField(creationWindow.getClass(), "progressBar"));
         registerEventProcessors();
-        while (isActive())
-        {
+        while (isActive()) {
             waitOnPause();
             float progress = ReflectionUtil.getPrivateField(progressBar, ReflectionUtil.getField(progressBar.getClass(), "progress"));
 
-            if (repairInstrument && fishingRod.getDamage() > 10)
-            {
+            if (repairInstrument && fishingRod.getDamage() > 10) {
                 Mod.hud.sendAction(
                         PlayerAction.REPAIR,
                         fishingRod.getId()
                 );
             }
 
-            if (progress == 0f && creationWindow.getActionInUse() == 0) 
-            {
+            if (progress == 0f && creationWindow.getActionInUse() == 0) {
                 if (Tiles.getTileId(world.getPlayerCurrentTileX(), world.getPlayerCurrentTileY(), 0) != tileId)
                     tileId = Tiles.getTileId(world.getPlayerCurrentTileX(), world.getPlayerCurrentTileY(), 0);
 
-                if (lineBreaks) 
-                {
+                if (lineBreaks) {
                     InventoryMetaItem fishingLine = Utils.getInventoryItem("fine fishing line");
-                    if (fishingLine == null) 
-                    {
+                    if (fishingLine == null) {
                         fishingLine = Utils.getInventoryItem("fishing line");
                     }
-                    if (fishingLine != null) 
-                    {
+                    if (fishingLine != null) {
                         Mod.hud.getWorld().getServerConnection().sendAction(fishingLine.getId(),
-                                new long[]{fishingRod.getId()}, new PlayerAction("",(short) 132, PlayerAction.ANYTHING));
-                    }
-                    else
-                    {
+                                new long[]{fishingRod.getId()}, new PlayerAction("", (short) 132, PlayerAction.ANYTHING));
+                    } else {
                         Utils.consolePrint("You don't have any fishing line");
                     }
                 }
@@ -128,8 +116,8 @@ public class FisherBot extends BotBase
         line("Replace a fishing line on the current rod",
                 "");
 
-        private String description;
-        private String usage;
+        private final String description;
+        private final String usage;
 
         InputKey(String description, String usage) {
             this.description = description;

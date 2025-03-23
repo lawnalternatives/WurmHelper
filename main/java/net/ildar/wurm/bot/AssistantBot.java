@@ -67,12 +67,6 @@ public class AssistantBot extends BotBase {
 
     private boolean verbose = false;
 
-    public static BotRegistration getRegistration() {
-        return new BotRegistration(AssistantBot.class,
-                "Assists player in various ways",
-                "a");
-    }
-
     public AssistantBot() {
         registerInputHandler(AssistantBot.InputKey.w, input -> toggleDrinking(0));
         registerInputHandler(AssistantBot.InputKey.wid, this::toggleDrinkingByTargetId);
@@ -97,15 +91,21 @@ public class AssistantBot extends BotBase {
         registerInputHandler(AssistantBot.InputKey.v, input -> toggleVerbosity());
     }
 
+    public static BotRegistration getRegistration() {
+        return new BotRegistration(AssistantBot.class,
+                "Assists player in various ways",
+                "a");
+    }
+
     @Override
-    public void work() throws Exception{
+    public void work() throws Exception {
         registerEventProcessors();
         CreationWindow creationWindow = Mod.hud.getCreationWindow();
         Object progressBar = ReflectionUtil.getPrivateField(creationWindow, ReflectionUtil.getField(creationWindow.getClass(), "progressBar"));
         while (isActive()) {
             waitOnPause();
             float progress = ReflectionUtil.getPrivateField(progressBar, ReflectionUtil.getField(progressBar.getClass(), "progress"));
-            if (progress == 0f && creationWindow.getActionInUse() == 0){
+            if (progress == 0f && creationWindow.getActionInUse() == 0) {
                 if (casting) {
                     float favor = Mod.hud.getWorld().getPlayer().getSkillSet().getSkillValue("favor");
                     if (favor > spellToCast.favorCap) {
@@ -155,7 +155,7 @@ public class AssistantBot extends BotBase {
                         int counter = 0;
                         while (drinking && !successfullDrinkingStart && counter++ < 50) {
                             if (verbose) Utils.consolePrint("successfullDrinkingStart counter=" + counter);
-                            Mod.hud.sendAction(new PlayerAction("",(short) 183, PlayerAction.ANYTHING), waterId);
+                            Mod.hud.sendAction(new PlayerAction("", (short) 183, PlayerAction.ANYTHING), waterId);
                             sleep(500);
                         }
                         counter = 0;
@@ -182,7 +182,7 @@ public class AssistantBot extends BotBase {
                     while (lockpicking && !successfullStartOfLockpicking && counter++ < 50 && !noLock) {
                         if (verbose) Utils.consolePrint("successfullStartOfLockpicking counter=" + counter);
                         Mod.hud.getWorld().getServerConnection().sendAction(lockpickId,
-                                new long[]{chestId}, new PlayerAction("",(short) 101, PlayerAction.ANYTHING));
+                                new long[]{chestId}, new PlayerAction("", (short) 101, PlayerAction.ANYTHING));
                         sleep(500);
                     }
                     if (counter >= 50) continue;
@@ -205,7 +205,7 @@ public class AssistantBot extends BotBase {
                         while (lockpicking && !successfullLocking && counter++ < 50) {
                             if (verbose) Utils.consolePrint("successfullLocking lockingcounter=" + counter);
                             Mod.hud.getWorld().getServerConnection().sendAction(padlockId,
-                                    new long[]{chestId}, new PlayerAction("",(short) 161, PlayerAction.ANYTHING));
+                                    new long[]{chestId}, new PlayerAction("", (short) 161, PlayerAction.ANYTHING));
                             sleep(500);
                         }
                     }
@@ -221,7 +221,7 @@ public class AssistantBot extends BotBase {
                         int counter = 0;
                         while (trashCleaning && !successfullStartTrashCleaning && counter++ < 30) {
                             if (verbose) Utils.consolePrint("successfullStartTrashCleaning counter=" + counter);
-                            Mod.hud.sendAction(new PlayerAction("",(short) 954, PlayerAction.ANYTHING), trashBinId);
+                            Mod.hud.sendAction(new PlayerAction("", (short) 954, PlayerAction.ANYTHING), trashBinId);
                             sleep(1000);
                         }
                         successfullStartTrashCleaning = true;
@@ -277,7 +277,7 @@ public class AssistantBot extends BotBase {
                             while (kindlingBurning && !successfullStartOfBurning && counter++ < 50) {
                                 if (verbose) Utils.consolePrint("successfullStartOfBurning counter=" + counter);
                                 Mod.hud.getWorld().getServerConnection().sendAction(
-                                        biggestKindling.getId(), new long[]{forgeId}, new PlayerAction("",(short) 117, PlayerAction.ANYTHING));
+                                        biggestKindling.getId(), new long[]{forgeId}, new PlayerAction("", (short) 117, PlayerAction.ANYTHING));
                                 sleep(300);
                             }
                             successfullStartOfBurning = true;
@@ -331,7 +331,7 @@ public class AssistantBot extends BotBase {
                 () -> successfullStartOfSacrificing = true);
     }
 
-    private void toggleDrinkingByTargetId(String input[]) {
+    private void toggleDrinkingByTargetId(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(AssistantBot.InputKey.wid);
             return;
@@ -343,7 +343,7 @@ public class AssistantBot extends BotBase {
         }
     }
 
-    private void toggleLockpickingByTargetId(String input[]) {
+    private void toggleLockpickingByTargetId(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(AssistantBot.InputKey.lid);
             return;
@@ -356,7 +356,7 @@ public class AssistantBot extends BotBase {
     }
 
 
-    private void toggleTrashCleaningByTargetId(String input[]) {
+    private void toggleTrashCleaningByTargetId(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(AssistantBot.InputKey.cleanupid);
             return;
@@ -368,7 +368,7 @@ public class AssistantBot extends BotBase {
         }
     }
 
-    private void togglePrayingByAltarId(String input[]) {
+    private void togglePrayingByAltarId(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(AssistantBot.InputKey.pid);
             return;
@@ -380,7 +380,7 @@ public class AssistantBot extends BotBase {
         }
     }
 
-    private void toggleSacrificingByAltarId(String input[]) {
+    private void toggleSacrificingByAltarId(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(AssistantBot.InputKey.sid);
             return;
@@ -392,7 +392,7 @@ public class AssistantBot extends BotBase {
         }
     }
 
-    private void toggleKindlingBurningByForgeId(String input[]) {
+    private void toggleKindlingBurningByForgeId(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(AssistantBot.InputKey.kbid);
             return;
@@ -404,7 +404,7 @@ public class AssistantBot extends BotBase {
         }
     }
 
-    private void setKindlingBurnsTimeout(String input[]) {
+    private void setKindlingBurnsTimeout(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(AssistantBot.InputKey.kbt);
             return;
@@ -429,7 +429,7 @@ public class AssistantBot extends BotBase {
         Utils.consolePrint("Current kindling burn timeout is " + kindlingBurningTimeout);
     }
 
-    private void setPrayerTimeout(String input[]) {
+    private void setPrayerTimeout(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(AssistantBot.InputKey.pt);
             return;
@@ -454,7 +454,7 @@ public class AssistantBot extends BotBase {
         Utils.consolePrint("Current prayer timeout is " + prayingTimeout);
     }
 
-    private void setTrashCleaningTimeout(String input[]) {
+    private void setTrashCleaningTimeout(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(AssistantBot.InputKey.cleanupt);
             return;
@@ -479,7 +479,7 @@ public class AssistantBot extends BotBase {
         Utils.consolePrint("Current trash cleaning timeout is " + trashCleaningTimeout);
     }
 
-    private void setSacrificeTimeout(String input[]) {
+    private void setSacrificeTimeout(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(AssistantBot.InputKey.st);
             return;
@@ -504,7 +504,7 @@ public class AssistantBot extends BotBase {
         Utils.consolePrint("Current sacrifice timeout is " + sacrificeTimeout);
     }
 
-    private void setLockpickingTimeout(String input[]) {
+    private void setLockpickingTimeout(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(AssistantBot.InputKey.lt);
             return;
@@ -559,11 +559,11 @@ public class AssistantBot extends BotBase {
 
     private void showSpellList() {
         Utils.consolePrint("Spell abbreviation");
-        for(Enchant enchant : Enchant.values())
+        for (Enchant enchant : Enchant.values())
             Utils.consolePrint(enchant.name() + " " + enchant.abbreviation);
     }
 
-    private void toggleAutocasting(String [] input) {
+    private void toggleAutocasting(String[] input) {
         casting = !casting;
         if (casting) {
             try {
@@ -706,7 +706,7 @@ public class AssistantBot extends BotBase {
     private void toggleLockpicking(long chestId) {
         lockpicking = !lockpicking;
         if (lockpicking) {
-            if(chestId == 0) {
+            if (chestId == 0) {
                 int x = Mod.hud.getWorld().getClient().getXMouse();
                 int y = Mod.hud.getWorld().getClient().getYMouse();
                 long[] targets = Mod.hud.getCommandTargetsFrom(x, y);
@@ -782,8 +782,9 @@ public class AssistantBot extends BotBase {
         lid("Toggle automatic lockpicking of target chest with provided id", "id"),
         v("Toggle verbose mode. In verbose mode the " + AssistantBot.class.getSimpleName() + " will output additional info to the console", "");
 
-        private String description;
-        private String usage;
+        private final String description;
+        private final String usage;
+
         InputKey(String description, String usage) {
             this.description = description;
             this.usage = usage;
@@ -805,7 +806,7 @@ public class AssistantBot extends BotBase {
         }
     }
 
-    enum Enchant{
+    enum Enchant {
         BLESS(10, PlayerAction.BLESS, "b"),
         MORNINGFOG(5, PlayerAction.MORNING_FOG, "mf"),
         DISPEL(10, PlayerAction.DISPEL, "d"),
@@ -814,13 +815,15 @@ public class AssistantBot extends BotBase {
         int favorCap;
         PlayerAction playerAction;
         String abbreviation;
+
         Enchant(int favorCap, PlayerAction playerAction, String abbreviation) {
             this.favorCap = favorCap;
             this.playerAction = playerAction;
             this.abbreviation = abbreviation;
         }
+
         static Enchant getByAbbreviation(String abbreviation) {
-            for(Enchant enchant : values())
+            for (Enchant enchant : values())
                 if (enchant.abbreviation.equals(abbreviation))
                     return enchant;
             return DISPEL;

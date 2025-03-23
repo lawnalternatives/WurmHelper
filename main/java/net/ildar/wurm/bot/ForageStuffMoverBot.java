@@ -10,9 +10,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class ForageStuffMoverBot extends BotBase {
-    private List<Long> targets = new ArrayList<>();
+    private final List<Long> targets = new ArrayList<>();
     private boolean moveRareItems;
     private boolean notMoveRocks;
+
+    public ForageStuffMoverBot() {
+        registerInputHandler(ForageStuffMoverBot.InputKey.at, input -> addTarget());
+        registerInputHandler(ForageStuffMoverBot.InputKey.r, input -> toggleMovingRareItems());
+        registerInputHandler(ForageStuffMoverBot.InputKey.mr, input -> toggleMovingRocks());
+    }
 
     public static BotRegistration getRegistration() {
         return new BotRegistration(ForageStuffMoverBot.class,
@@ -21,14 +27,8 @@ public class ForageStuffMoverBot extends BotBase {
                 "fsm");
     }
 
-    public ForageStuffMoverBot() {
-        registerInputHandler(ForageStuffMoverBot.InputKey.at, input -> addTarget());
-        registerInputHandler(ForageStuffMoverBot.InputKey.r, input -> toggleMovingRareItems());
-        registerInputHandler(ForageStuffMoverBot.InputKey.mr, input -> toggleMovingRocks());
-    }
-
     @Override
-    public void work() throws Exception{
+    public void work() throws Exception {
         while (isActive()) {
             waitOnPause();
             List<InventoryMetaItem> foragables = Utils.getSelectedItems(Mod.hud.getInventoryWindow().getInventoryListComponent(), true, true);
@@ -64,12 +64,12 @@ public class ForageStuffMoverBot extends BotBase {
 
     private void toggleMovingRareItems() {
         moveRareItems = !moveRareItems;
-        Utils.consolePrint("Rare items will be " + (moveRareItems?"":"NOT") + " moved");
+        Utils.consolePrint("Rare items will be " + (moveRareItems ? "" : "NOT") + " moved");
     }
 
     private void toggleMovingRocks() {
         notMoveRocks = !notMoveRocks;
-        Utils.consolePrint("Rocks will be " + (notMoveRocks?"NOT":"") + " moved");
+        Utils.consolePrint("Rocks will be " + (notMoveRocks ? "NOT" : "") + " moved");
     }
 
     enum InputKey implements BotBase.InputKey {
@@ -77,8 +77,9 @@ public class ForageStuffMoverBot extends BotBase {
         r("Toggle moving of rare items", ""),
         mr("Toggle moving of rocks", "");
 
-        private String description;
-        private String usage;
+        private final String description;
+        private final String usage;
+
         InputKey(String description, String usage) {
             this.description = description;
             this.usage = usage;

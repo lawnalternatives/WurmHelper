@@ -9,8 +9,16 @@ import java.util.List;
 
 public class BulkItemGetterBot extends BotBase {
     public static boolean closeBMLWindow;
-    private List<SourceItem> sources = new ArrayList<>();
-    private List<Long> targets = new ArrayList<>();
+    private final List<SourceItem> sources = new ArrayList<>();
+    private final List<Long> targets = new ArrayList<>();
+
+    public BulkItemGetterBot() {
+        registerInputHandler(BulkItemGetterBot.InputKey.as, input -> addSource());
+        registerInputHandler(BulkItemGetterBot.InputKey.at, input -> addTarget());
+        registerInputHandler(BulkItemGetterBot.InputKey.asid, this::addSourceById);
+        registerInputHandler(BulkItemGetterBot.InputKey.atid, this::addTargetById);
+        registerInputHandler(BulkItemGetterBot.InputKey.ssxy, input -> addFixedPointSource());
+    }
 
     public static BotRegistration getRegistration() {
         return new BotRegistration(BulkItemGetterBot.class,
@@ -20,7 +28,7 @@ public class BulkItemGetterBot extends BotBase {
     }
 
     @Override
-    public void work() throws Exception{
+    public void work() throws Exception {
         closeBMLWindow = false;
         setTimeout(15000);
         registerEventProcessor(message -> message.contains("That item is already busy"),
@@ -29,7 +37,7 @@ public class BulkItemGetterBot extends BotBase {
             waitOnPause();
             if (sources.size() > 0 && targets.size() > 0) {
                 int moves = Math.min(sources.size(), targets.size());
-                for(int i = 0; i < moves; i++) {
+                for (int i = 0; i < moves; i++) {
                     SourceItem sourceItem = sources.get(i);
                     if (sourceItem.fixedPoint) {
                         long[] items = Mod.hud.getCommandTargetsFrom(sourceItem.x, sourceItem.y);
@@ -44,25 +52,16 @@ public class BulkItemGetterBot extends BotBase {
                     //Utils.consolePrint(i + " - moving " + sources.get(i) + " to " + targets.get(i));
                     Mod.hud.getWorld().getServerConnection().sendMoveSomeItems(targets.get(i), new long[]{sourceItem.id});
                     int counter = 0;
-                    while(closeBMLWindow && counter++ < 50)
+                    while (closeBMLWindow && counter++ < 50)
                         sleep(100);
                 }
                 sleep(timeout);
-            }
-            else
+            } else
                 sleep(1000);
         }
     }
 
-    public BulkItemGetterBot() {
-        registerInputHandler(BulkItemGetterBot.InputKey.as, input -> addSource());
-        registerInputHandler(BulkItemGetterBot.InputKey.at, input -> addTarget());
-        registerInputHandler(BulkItemGetterBot.InputKey.asid, this::addSourceById);
-        registerInputHandler(BulkItemGetterBot.InputKey.atid, this::addTargetById);
-        registerInputHandler(BulkItemGetterBot.InputKey.ssxy, input -> addFixedPointSource());
-    }
-
-    private void addSourceById(String input[]) {
+    private void addSourceById(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(BulkItemGetterBot.InputKey.asid);
             return;
@@ -77,7 +76,7 @@ public class BulkItemGetterBot extends BotBase {
         }
     }
 
-    private void addTargetById(String input[]) {
+    private void addTargetById(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(BulkItemGetterBot.InputKey.atid);
             return;
@@ -95,7 +94,7 @@ public class BulkItemGetterBot extends BotBase {
         try {
             int x = Mod.hud.getWorld().getClient().getXMouse();
             int y = Mod.hud.getWorld().getClient().getYMouse();
-            long [] items = Mod.hud.getCommandTargetsFrom(x, y);
+            long[] items = Mod.hud.getCommandTargetsFrom(x, y);
             if (items == null || items.length == 0)
                 Utils.consolePrint(this.getClass().getSimpleName() + " is unable to set a source item");
             else {
@@ -107,7 +106,7 @@ public class BulkItemGetterBot extends BotBase {
 
         } catch (Exception e) {
             Utils.consolePrint(this.getClass().getSimpleName() + " has encountered an error  while setting source - " + e.getMessage());
-            Utils.consolePrint( e.toString());
+            Utils.consolePrint(e.toString());
         }
     }
 
@@ -115,15 +114,15 @@ public class BulkItemGetterBot extends BotBase {
         try {
             int x = Mod.hud.getWorld().getClient().getXMouse();
             int y = Mod.hud.getWorld().getClient().getYMouse();
-            long []target = Mod.hud.getCommandTargetsFrom(x,y);
+            long[] target = Mod.hud.getCommandTargetsFrom(x, y);
             if (target != null && target.length > 0) {
                 targets.add(target[0]);
                 Utils.consolePrint("New target is " + target[0]);
             } else
                 Utils.consolePrint("Couldn't find the target for " + this.getClass().getSimpleName());
-        }catch (Exception e) {
+        } catch (Exception e) {
             Utils.consolePrint(this.getClass().getSimpleName() + " has encountered an error while setting target - " + e.getMessage());
-            Utils.consolePrint( e.toString());
+            Utils.consolePrint(e.toString());
         }
     }
 
@@ -143,9 +142,11 @@ public class BulkItemGetterBot extends BotBase {
         at("Add the target item the user is currently pointing to", ""),
         asid("Add the source(item in bulk storage) with provided id", "id"),
         atid("Add the target item with provided id", "id"),
-        ssxy("Add source item from fixed point on screen", ""),;
-        private String description;
-        private String usage;
+        ssxy("Add source item from fixed point on screen", ""),
+        ;
+        private final String description;
+        private final String usage;
+
         InputKey(String description, String usage) {
             this.description = description;
             this.usage = usage;

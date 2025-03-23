@@ -10,7 +10,7 @@ class AreaAssistant {
     private int moveRightDistance = 3;//in tiles
     private long stepTimeout = 1000;
 
-    private BotBase bot;
+    private final BotBase bot;
     private int height = 0, width = 0;
 
     //start point - bottom left corner of area
@@ -25,7 +25,8 @@ class AreaAssistant {
         bot.registerInputHandler(InputKey.area, this::toggleAreaTour);
         bot.registerInputHandler(InputKey.area_speed, this::setAreaModeSpeed);
     }
-    void areaNextPosition() throws InterruptedException{
+
+    void areaNextPosition() throws InterruptedException {
         if (!areaTourActivated()) return;
         recalculateBiases();
         if (movedAhead < 0 || movedAhead > height - 1 || movedToRight < 0 || movedToRight > width - 1) {
@@ -62,9 +63,9 @@ class AreaAssistant {
         Utils.stabilizePlayer();
     }
 
-    private void turnPlayer(){
+    private void turnPlayer() {
         if (turnedRight) {
-            Utils.turnPlayer(((startDirection+2)%4) * 90, 0);
+            Utils.turnPlayer(((startDirection + 2) % 4) * 90, 0);
         } else {
             Utils.turnPlayer(startDirection * 90, 0);
         }
@@ -130,7 +131,7 @@ class AreaAssistant {
     void toggleAreaTour(String[] input) {
         if (areaTourActivated()) {
             stopAreaTour();
-        } else  {
+        } else {
             if (input != null && input.length == 2) {
                 try {
                     startAreaTour(Integer.parseInt(input[0]), Integer.parseInt(input[1]));
@@ -139,13 +140,12 @@ class AreaAssistant {
                     Utils.consolePrint("Wrong area size!");
                     bot.printInputKeyUsageString(InputKey.area);
                 }
-            }
-            else
+            } else
                 bot.printInputKeyUsageString(InputKey.area);
         }
     }
 
-    private void setAreaModeSpeed(String []input) {
+    private void setAreaModeSpeed(String[] input) {
         if (input == null || input.length != 1) {
             bot.printInputKeyUsageString(InputKey.area_speed);
             return;
@@ -172,8 +172,9 @@ class AreaAssistant {
         area("Toggle the area processing mode. ", "tiles_ahead tiles_to_the_right"),
         area_speed("Set the speed of moving for area mode. Default value is 1 second per tile.", "speed(float value)");
 
-        private String description;
-        private String usage;
+        private final String description;
+        private final String usage;
+
         InputKey(String description, String usage) {
             this.description = description;
             this.usage = usage;

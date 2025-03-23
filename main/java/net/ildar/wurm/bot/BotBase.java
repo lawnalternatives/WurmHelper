@@ -23,11 +23,11 @@ public abstract class BotBase extends Thread {
     /**
      * The bot implementation should register his input handlers with {@link #registerInputHandler(InputKey, InputHandler)}
      */
-    private Map<InputKey, InputHandler> inputHandlers = new HashMap<>();
+    private final Map<InputKey, InputHandler> inputHandlers = new HashMap<>();
     /**
      * Store all registered message processors here to unregister them on bot deactivation to prevent memory leaks
      */
-    private List<Chat.MessageProcessor> registeredMessageProcessors = new ArrayList<>();
+    private final List<Chat.MessageProcessor> registeredMessageProcessors = new ArrayList<>();
     private boolean paused = false;
 
     public BotBase() {
@@ -36,6 +36,10 @@ public abstract class BotBase extends Thread {
         registerInputHandler(InputKeyBase.off, inputs -> deactivate());
         registerInputHandler(InputKeyBase.info, this::handleInfoCommand);
         registerInputHandler(InputKeyBase.pause, inputs -> togglePause());
+    }
+
+    public static BotRegistration getRegistration() {
+        return new BotRegistration(BotBase.class, "Bot didn't provide a description", "?");
     }
 
     //Bot implementations must do their stuff here
@@ -53,10 +57,6 @@ public abstract class BotBase extends Thread {
         unregisterMessageProcessors();
         BotController.getInstance().onBotInterrupted(getClass());
         Utils.consolePrint(this.getClass().getSimpleName() + " was stopped");
-    }
-
-    public static BotRegistration getRegistration() {
-        return new BotRegistration(BotBase.class, "Bot didn't provide a description", "?");
     }
 
     boolean isActive() {
@@ -223,8 +223,8 @@ public abstract class BotBase extends Thread {
         info("Get information about configuration key",
                 "key");
 
-        private String description;
-        private String usage;
+        private final String description;
+        private final String usage;
 
         InputKeyBase(String description, String usage) {
             this.description = description;

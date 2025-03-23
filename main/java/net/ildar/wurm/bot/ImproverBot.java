@@ -17,23 +17,12 @@ import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import java.util.*;
 
 public class ImproverBot extends BotBase {
-    private List<Tool> tools = new ArrayList<>();
-    private List<InventoryListComponent> targets = new ArrayList<>();
+    private final List<Tool> tools = new ArrayList<>();
+    private final List<InventoryListComponent> targets = new ArrayList<>();
     private float staminaThreshold;
     private boolean improveActionFinished;
     private boolean groundMode;
     private ToolSkill toolSkill = ToolSkill.UNKNOWN;
-
-    public static BotRegistration getRegistration() {
-        return new BotRegistration(ImproverBot.class,
-        "Improves selected items in provided inventories. Tools searched from player's inventory. " +
-                "Items like water or stone searched before each improve, " +
-                "actual instruments searched one time before improve of the first item that must be improved with this tool. " +
-                "Tool for improving is determined by improve icon that you see on the right side of item row in inventory. " +
-                "For example improve icons for stone chisel and carving knife are equal, and sometimes bot can choose wrong tool. " +
-                "Use \"" + ImproverBot.InputKey.ci.name() + "\" key to change the chosen instrument.",
-                "i");
-    }
 
     @SuppressWarnings("ArraysAsListWithZeroOrOneArgument")
     public ImproverBot() {
@@ -89,8 +78,19 @@ public class ImproverBot extends BotBase {
 
     }
 
+    public static BotRegistration getRegistration() {
+        return new BotRegistration(ImproverBot.class,
+                "Improves selected items in provided inventories. Tools searched from player's inventory. " +
+                        "Items like water or stone searched before each improve, " +
+                        "actual instruments searched one time before improve of the first item that must be improved with this tool. " +
+                        "Tool for improving is determined by improve icon that you see on the right side of item row in inventory. " +
+                        "For example improve icons for stone chisel and carving knife are equal, and sometimes bot can choose wrong tool. " +
+                        "Use \"" + ImproverBot.InputKey.ci.name() + "\" key to change the chosen instrument.",
+                "i");
+    }
+
     @Override
-    public void work() throws Exception{
+    public void work() throws Exception {
         setStaminaThreshold(0.8f);
         setTimeout(300);
         registerEventProcessors();
@@ -106,7 +106,7 @@ public class ImproverBot extends BotBase {
             float stamina = Mod.hud.getWorld().getPlayer().getStamina();
             float damage = Mod.hud.getWorld().getPlayer().getDamage();
             boolean improveInitiated = false;
-            if ((stamina+damage) > staminaThreshold && progress == 0f && creationWindow.getActionInUse() == 0) {
+            if ((stamina + damage) > staminaThreshold && progress == 0f && creationWindow.getActionInUse() == 0) {
                 if (!groundMode) {
                     List<InventoryMetaItem> selectedItems = new ArrayList<>();
                     for (InventoryListComponent ilc : targets) {
@@ -119,7 +119,7 @@ public class ImproverBot extends BotBase {
                         sleep(timeout);
                         continue;
                     }
-                    selectedItems.sort(Comparator.comparingDouble(item -> item.getQuality() * (1- item.getDamage()/100)));
+                    selectedItems.sort(Comparator.comparingDouble(item -> item.getQuality() * (1 - item.getDamage() / 100)));
                     for (InventoryMetaItem itemToImprove : selectedItems) {
                         if (itemToImprove == null || itemToImprove.getImproveIconId() < 0) {
                             continue;
@@ -134,8 +134,8 @@ public class ImproverBot extends BotBase {
                             if (!toolItemFound)
                                 continue;
                         }
-                        if(MaterialUtilities.isMetal(itemToImprove.getMaterialId())){
-                            if(itemToImprove.getTemperature()<5) {
+                        if (MaterialUtilities.isMetal(itemToImprove.getMaterialId())) {
+                            if (itemToImprove.getTemperature() < 5) {
                                 Utils.consolePrint("Item \"" + itemToImprove.getBaseName() + "\" isn't hot enough");
                                 continue;
                             }
@@ -152,44 +152,44 @@ public class ImproverBot extends BotBase {
                 } else {
                     PickableUnit pickableUnit = ReflectionUtil.getPrivateField(Mod.hud.getSelectBar(),
                             ReflectionUtil.getField(Mod.hud.getSelectBar().getClass(), "selectedUnit"));
-                    boolean isCreatureCell = pickableUnit instanceof CreatureCellRenderable && ((CreatureCellRenderable)pickableUnit).isItem();
+                    boolean isCreatureCell = pickableUnit instanceof CreatureCellRenderable && ((CreatureCellRenderable) pickableUnit).isItem();
                     boolean isGroundCell = pickableUnit instanceof GroundItemCellRenderable;
                     if (pickableUnit == null || (!isCreatureCell && !isGroundCell)) {
                         Utils.consolePrint("No selected item!");
                         sleep(timeout);
                         continue;
                     }
-                    byte materialId=-1;
-                    if(isCreatureCell){
-                        CreatureData creatureItem=((CreatureCellRenderable)pickableUnit).getCreatureData();
-                        materialId=creatureItem.getMaterialId();
+                    byte materialId = -1;
+                    if (isCreatureCell) {
+                        CreatureData creatureItem = ((CreatureCellRenderable) pickableUnit).getCreatureData();
+                        materialId = creatureItem.getMaterialId();
                     }
-                    if(isGroundCell){
+                    if (isGroundCell) {
                         GroundItemData pickableItem = ReflectionUtil.getPrivateField(pickableUnit, ReflectionUtil.getField(GroundItemCellRenderable.class, "item"));
-                        materialId=pickableItem.getMaterialId();
+                        materialId = pickableItem.getMaterialId();
                     }
-                    if(materialId==-1){
+                    if (materialId == -1) {
                         sleep(timeout);
                         continue;
                     }
 
                     ToolSkill groundSkill = ToolSkill.getSkillForItem(materialId);
-                    if(groundSkill== ToolSkill.UNKNOWN){
+                    if (groundSkill == ToolSkill.UNKNOWN) {
                         sleep(timeout);
                         continue;
                     }
 
-                    toolSkill=(groundSkill!=ToolSkill.UNKNOWN && groundSkill!=toolSkill)?groundSkill:toolSkill;
+                    toolSkill = (groundSkill != ToolSkill.UNKNOWN && groundSkill != toolSkill) ? groundSkill : toolSkill;
 
                     improveActionFinished = false;
                     Mod.hud.sendAction(PlayerAction.REPAIR, pickableUnit.getId());
                     for (Tool tool : getToolsBySkill(toolSkill)) {
                         if (tool.itemId == 0 || !tool.fixed) {
                             //process metal lumps
-                            if(MaterialUtilities.isMetal(materialId) && !tool.name.contains(MaterialUtilities.getMaterialString(materialId)) && tool.name.contains("lump"))
+                            if (MaterialUtilities.isMetal(materialId) && !tool.name.contains(MaterialUtilities.getMaterialString(materialId)) && tool.name.contains("lump"))
                                 continue;
 
-                            boolean toolItemFound = assignItemForTool(tool,-1);
+                            boolean toolItemFound = assignItemForTool(tool, -1);
                             if (!toolItemFound)
                                 continue;
                         }
@@ -217,7 +217,7 @@ public class ImproverBot extends BotBase {
         if (toolSkill == null || toolSkill == ToolSkill.UNKNOWN)
             return tools;
         List<Tool> toolsBySkill = new ArrayList<>();
-        for(Tool tool : tools) {
+        for (Tool tool : tools) {
             if (tool.toolSkills.contains(toolSkill))
                 toolsBySkill.add(tool);
         }
@@ -227,12 +227,12 @@ public class ImproverBot extends BotBase {
     private Tool findToolForImprove(InventoryMetaItem item) {
         if (item == null) return null;
         Tool returnTool = null;
-        if(!this.groundMode)
+        if (!this.groundMode)
             toolSkill = ToolSkill.getSkillForItem(item.getMaterialId());
 
-        for(Tool tool : getToolsBySkill(toolSkill))
+        for (Tool tool : getToolsBySkill(toolSkill))
             if (tool.improveIconId == item.getImproveIconId()) {
-                if(MaterialUtilities.isMetal(item.getMaterialId()) && !tool.name.contains(MaterialUtilities.getMaterialString(item.getMaterialId())) && tool.name.contains("lump"))
+                if (MaterialUtilities.isMetal(item.getMaterialId()) && !tool.name.contains(MaterialUtilities.getMaterialString(item.getMaterialId())) && tool.name.contains("lump"))
                     continue;
 
                 if (tool.itemId == 0) {
@@ -267,16 +267,15 @@ public class ImproverBot extends BotBase {
                 toolOptionalItem = Utils.getInventoryItems(tool.name).stream().max((item1, item2) -> Float.compare(item1.getWeight(), item2.getWeight()));
             if (toolOptionalItem.isPresent())
                 toolItem = toolOptionalItem.get();
-        }
-        else
+        } else
             toolItem = Utils.getInventoryItem(Mod.hud.getInventoryWindow().getInventoryListComponent(), tool.name);
         if (toolItem == null) {
             Utils.consolePrint("Can't find an item for a tool \"" + tool.name + "\"");
             return false;
         }
         //check lump heat
-        if(MaterialUtilities.isMetal(toolItem.getMaterialId()) && toolItem.getBaseName().contains("lump")){
-            if(toolItem.getTemperature()<5) {
+        if (MaterialUtilities.isMetal(toolItem.getMaterialId()) && toolItem.getBaseName().contains("lump")) {
+            if (toolItem.getTemperature() < 5) {
                 Utils.consolePrint("The \"" + toolItem.getDisplayName() + "\" isn't hot enough");
                 return false;
             }
@@ -316,7 +315,6 @@ public class ImproverBot extends BotBase {
     }
 
 
-
     private void changeInstrument() {
         List<InventoryMetaItem> selectedItems = Utils.getSelectedItems();
         if (selectedItems == null || selectedItems.size() == 0) {
@@ -324,11 +322,11 @@ public class ImproverBot extends BotBase {
             return;
         }
         InventoryMetaItem instrument = selectedItems.get(0);
-        for(Tool tool : tools) {
-            if(instrument.getBaseName().contains(tool.name)) {
+        for (Tool tool : tools) {
+            if (instrument.getBaseName().contains(tool.name)) {
                 printShortToolInfo(instrument);
                 tool.itemId = instrument.getId();
-                for(Tool anotherTool : tools)
+                for (Tool anotherTool : tools)
                     if (!anotherTool.equals(tool) && anotherTool.improveIconId == tool.improveIconId)
                         anotherTool.itemId = 0;
                 return;
@@ -336,9 +334,10 @@ public class ImproverBot extends BotBase {
         }
         Utils.consolePrint("Unable to assign selected item to any known tool");
     }
+
     private void listAvailableSkills() {
         Utils.consolePrint(" skill_name \t\t abbreviation");
-        for(ToolSkill toolSkill : ToolSkill.values()) {
+        for (ToolSkill toolSkill : ToolSkill.values()) {
             if (toolSkill == ToolSkill.UNKNOWN) continue;
             Utils.consolePrint(" " + toolSkill.name() + " \t\t " + toolSkill.abbreviation);
         }
@@ -358,7 +357,7 @@ public class ImproverBot extends BotBase {
         }
     }
 
-    private void toggleGroundMode(String input[]) {
+    private void toggleGroundMode(String[] input) {
         if (groundMode) {
             groundMode = false;
             Utils.consolePrint("Ground mode is off!");
@@ -368,7 +367,7 @@ public class ImproverBot extends BotBase {
         }
     }
 
-    private void setStaminaThreshold(String input[]) {
+    private void setStaminaThreshold(String[] input) {
         if (input == null || input.length != 1)
             printInputKeyUsageString(ImproverBot.InputKey.s);
         else {
@@ -396,7 +395,7 @@ public class ImproverBot extends BotBase {
         try {
             ilc = ReflectionUtil.getPrivateField(inventoryComponent,
                     ReflectionUtil.getField(inventoryComponent.getClass(), "component"));
-        } catch(Exception e) {
+        } catch (Exception e) {
             Utils.consolePrint("Unable to get inventory information");
             return;
         }
@@ -413,8 +412,9 @@ public class ImproverBot extends BotBase {
         g("Toggle the ground mode. Set the skill first by \"" + ss.name() + "\" key", ""),
         ci("Change previously chosen instrument by tool selected in player's inventory", "");
 
-        private String description;
-        private String usage;
+        private final String description;
+        private final String usage;
+
         InputKey(String description, String usage) {
             this.description = description;
             this.usage = usage;
@@ -436,7 +436,46 @@ public class ImproverBot extends BotBase {
         }
     }
 
-    static class Tool{
+    enum ToolSkill {
+        UNKNOWN("?"),
+        CARPENTRY("c"),
+        MASONRY("m"),
+        POTTERY("p"),
+        CLOTH_TAILORING("ct"),
+        BLACKSMITHING("b"),
+        LEATHERWORKING("l");
+
+        String abbreviation;
+
+        ToolSkill(String abbreviation) {
+            this.abbreviation = abbreviation;
+        }
+
+        static ToolSkill getByAbbreviation(String abbreviation) {
+            for (ToolSkill toolSkill : values())
+                if (toolSkill.abbreviation.equals(abbreviation))
+                    return toolSkill;
+            return UNKNOWN;
+        }
+
+        static ToolSkill getSkillForItem(byte materialId) {
+            if (MaterialUtilities.isWood(materialId))
+                return ToolSkill.CARPENTRY;
+            if (MaterialUtilities.isMetal(materialId))
+                return ToolSkill.BLACKSMITHING;
+            if (MaterialUtilities.isLeather(materialId))
+                return ToolSkill.LEATHERWORKING;
+            if (MaterialUtilities.isCloth(materialId))
+                return ToolSkill.CLOTH_TAILORING;
+            if (MaterialUtilities.isStone(materialId))
+                return ToolSkill.MASONRY;
+            if (MaterialUtilities.isClay(materialId))
+                return ToolSkill.POTTERY;
+            return UNKNOWN;
+        }
+    }
+
+    static class Tool {
         int improveIconId;
         long itemId;
         String name;
@@ -456,43 +495,6 @@ public class ImproverBot extends BotBase {
         @Override
         public String toString() {
             return name;
-        }
-    }
-
-    enum ToolSkill {
-        UNKNOWN("?"),
-        CARPENTRY("c"),
-        MASONRY("m"),
-        POTTERY("p"),
-        CLOTH_TAILORING("ct"),
-        BLACKSMITHING("b"),
-        LEATHERWORKING("l");
-
-        String abbreviation;
-        ToolSkill(String abbreviation) {
-            this.abbreviation = abbreviation;
-        }
-
-        static ToolSkill getByAbbreviation(String abbreviation) {
-            for(ToolSkill toolSkill : values())
-                if (toolSkill.abbreviation.equals(abbreviation))
-                    return toolSkill;
-            return UNKNOWN;
-        }
-        static ToolSkill getSkillForItem(byte materialId){
-            if(MaterialUtilities.isWood(materialId))
-                return ToolSkill.CARPENTRY;
-            if(MaterialUtilities.isMetal(materialId))
-                return ToolSkill.BLACKSMITHING;
-            if(MaterialUtilities.isLeather(materialId))
-                return ToolSkill.LEATHERWORKING;
-            if(MaterialUtilities.isCloth(materialId))
-                return ToolSkill.CLOTH_TAILORING;
-            if(MaterialUtilities.isStone(materialId))
-                return ToolSkill.MASONRY;
-            if(MaterialUtilities.isClay(materialId))
-                return ToolSkill.POTTERY;
-            return UNKNOWN;
         }
     }
 }

@@ -1,7 +1,10 @@
 package net.ildar.wurm.bot;
 
 import com.wurmonline.client.game.inventory.InventoryMetaItem;
-import com.wurmonline.client.renderer.gui.*;
+import com.wurmonline.client.renderer.gui.InventoryListComponent;
+import com.wurmonline.client.renderer.gui.InventoryWindow;
+import com.wurmonline.client.renderer.gui.ItemListWindow;
+import com.wurmonline.client.renderer.gui.WurmComponent;
 import net.ildar.wurm.BotRegistration;
 import net.ildar.wurm.Mod;
 import net.ildar.wurm.Utils;
@@ -10,9 +13,9 @@ import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import java.util.*;
 
 public class ItemMoverBot extends BotBase {
-    private Set <String> itemNames;
+    private Set<String> itemNames;
     private TargetType targetType;
-    private Map <String, Float> itemMaximumWeights;
+    private Map<String, Float> itemMaximumWeights;
     private long target;
     private InventoryListComponent targetComponent;
     private String containerName;
@@ -21,13 +24,26 @@ public class ItemMoverBot extends BotBase {
     private String lastItemName;
     private boolean onlyFirstLevelItems = true;
 
+    public ItemMoverBot() {
+        registerInputHandler(ItemMoverBot.InputKey.clear, input -> clearItemList());
+        registerInputHandler(ItemMoverBot.InputKey.st, input -> setTargetItem());
+        registerInputHandler(ItemMoverBot.InputKey.stid, this::setTargetById);
+        registerInputHandler(ItemMoverBot.InputKey.str, input -> setTargetContainerRoot());
+        registerInputHandler(ItemMoverBot.InputKey.stc, this::setTargetAsContainer);
+        registerInputHandler(ItemMoverBot.InputKey.stcn, this::setTargetContainerVolume);
+        registerInputHandler(ItemMoverBot.InputKey.a, this::addNewItemName);
+        registerInputHandler(ItemMoverBot.InputKey.sw, this::setMaximumItemWeight);
+        registerInputHandler(ItemMoverBot.InputKey.r, input -> toggleRareItemsMoving());
+        registerInputHandler(ItemMoverBot.InputKey.fl, input -> toggleFirstLevelItemMoving());
+    }
+
     public static BotRegistration getRegistration() {
         return new BotRegistration(ItemMoverBot.class,
                 "Moves items from your inventory to the target destination.", "im");
     }
 
     @Override
-    public void work() throws Exception{
+    public void work() throws Exception {
         setTimeout(15000);
         while (isActive()) {
             waitOnPause();
@@ -49,7 +65,7 @@ public class ItemMoverBot extends BotBase {
                     }
                 }
                 if (itemsToMove.size() > 0) {
-                    long [] sources = Utils.getItemIds(itemsToMove);
+                    long[] sources = Utils.getItemIds(itemsToMove);
                     switch (targetType) {
                         case Item:
                             Mod.hud.getWorld().getServerConnection().sendMoveSomeItems(target, sources);
@@ -86,19 +102,6 @@ public class ItemMoverBot extends BotBase {
         }
     }
 
-    public ItemMoverBot() {
-        registerInputHandler(ItemMoverBot.InputKey.clear, input -> clearItemList());
-        registerInputHandler(ItemMoverBot.InputKey.st, input -> setTargetItem());
-        registerInputHandler(ItemMoverBot.InputKey.stid, this::setTargetById);
-        registerInputHandler(ItemMoverBot.InputKey.str, input -> setTargetContainerRoot());
-        registerInputHandler(ItemMoverBot.InputKey.stc, this::setTargetAsContainer);
-        registerInputHandler(ItemMoverBot.InputKey.stcn, this::setTargetContainerVolume);
-        registerInputHandler(ItemMoverBot.InputKey.a, this::addNewItemName);
-        registerInputHandler(ItemMoverBot.InputKey.sw, this::setMaximumItemWeight);
-        registerInputHandler(ItemMoverBot.InputKey.r, input -> toggleRareItemsMoving());
-        registerInputHandler(ItemMoverBot.InputKey.fl, input -> toggleFirstLevelItemMoving());
-    }
-
     private void toggleFirstLevelItemMoving() {
         onlyFirstLevelItems = !onlyFirstLevelItems;
         if (onlyFirstLevelItems)
@@ -107,7 +110,7 @@ public class ItemMoverBot extends BotBase {
             Utils.consolePrint("All items from your inventory that match added keywords can be moved");
     }
 
-    private void setTargetById(String []input) {
+    private void setTargetById(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(ItemMoverBot.InputKey.stid);
             return;
@@ -129,7 +132,7 @@ public class ItemMoverBot extends BotBase {
             Utils.consolePrint("Rare+ items will be moved too");
     }
 
-    private void setMaximumItemWeight(String []input) {
+    private void setMaximumItemWeight(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(ItemMoverBot.InputKey.sw);
             return;
@@ -146,13 +149,12 @@ public class ItemMoverBot extends BotBase {
             } catch (NumberFormatException e) {
                 Utils.consolePrint("Wrong item weight value!");
             }
-        }
-        else {
+        } else {
             Utils.consolePrint("Add an item first!");
         }
     }
 
-    private void addNewItemName(String []input) {
+    private void addNewItemName(String[] input) {
         if (input == null || input.length == 0) {
             printInputKeyUsageString(ItemMoverBot.InputKey.a);
             return;
@@ -164,7 +166,7 @@ public class ItemMoverBot extends BotBase {
         addItem(newItem.toString());
     }
 
-    private void setTargetContainerVolume(String []input) {
+    private void setTargetContainerVolume(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(ItemMoverBot.InputKey.stcn);
             return;
@@ -177,7 +179,7 @@ public class ItemMoverBot extends BotBase {
         }
     }
 
-    private void setTargetAsContainer(String []input) {
+    private void setTargetAsContainer(String[] input) {
         if (input == null || input.length == 0) {
             printInputKeyUsageString(ItemMoverBot.InputKey.stc);
             return;
@@ -197,7 +199,7 @@ public class ItemMoverBot extends BotBase {
             this.containerName = newContainer.toString();
             targetType = TargetType.Containers;
             Utils.consolePrint("New target component was set with container \"" + containerName + "\"");
-        } catch(Exception e) {
+        } catch (Exception e) {
             Utils.consolePrint("Error on getting container information");
             e.printStackTrace();
         }
@@ -213,13 +215,13 @@ public class ItemMoverBot extends BotBase {
         try {
             ilc = ReflectionUtil.getPrivateField(inventoryComponent,
                     ReflectionUtil.getField(inventoryComponent.getClass(), "component"));
-        } catch(Exception e) {
+        } catch (Exception e) {
             Utils.consolePrint("Error on getting container information");
             e.printStackTrace();
             return;
         }
         InventoryMetaItem rootItem = Utils.getRootItem(ilc);
-        if (rootItem!=null) {
+        if (rootItem != null) {
             Utils.consolePrint("Items will go to the \"" + rootItem.getBaseName() + "\"");
             targetType = TargetType.ContainerRoot;
             targetComponent = ilc;
@@ -227,20 +229,21 @@ public class ItemMoverBot extends BotBase {
             Utils.consolePrint("Failed on configuring the target container");
         }
     }
+
     private void setTargetItem() {
         try {
             int x = Mod.hud.getWorld().getClient().getXMouse();
             int y = Mod.hud.getWorld().getClient().getYMouse();
-            long [] targets = Mod.hud.getCommandTargetsFrom(x,y);
+            long[] targets = Mod.hud.getCommandTargetsFrom(x, y);
             if (targets != null && targets.length > 0) {
                 target = targets[0];
                 targetType = TargetType.Item;
                 Utils.consolePrint("New target is " + target);
             } else
                 Utils.consolePrint("Can't find the target");
-        }catch (Exception e) {
+        } catch (Exception e) {
             Utils.consolePrint(this.getClass().getSimpleName() + " has encountered an error while setting target - " + e.getMessage());
-            Utils.consolePrint( e.toString());
+            Utils.consolePrint(e.toString());
         }
     }
 
@@ -250,16 +253,16 @@ public class ItemMoverBot extends BotBase {
             itemNames = new HashSet<>();
         if (itemMaximumWeights == null)
             itemMaximumWeights = new HashMap<>();
-        if(item.contains(",")){
+        if (item.contains(",")) {
             String[] items = item.split(matchList);
-            for(String it: items){
-                if(!it.equals("")){
+            for (String it : items) {
+                if (!it.equals("")) {
                     itemNames.add(it);
                     itemMaximumWeights.put(it, 0f);
                     lastItemName = it;
                 }
             }
-        }else{
+        } else {
             itemNames.add(item);
             itemMaximumWeights.put(item, 0f);
             lastItemName = item;
@@ -267,15 +270,15 @@ public class ItemMoverBot extends BotBase {
         Utils.consolePrint("Current item set - " + itemNames.toString());
     }
 
-    private void clearItemList(){
+    private void clearItemList() {
         itemNames.clear();
         itemMaximumWeights.clear();
-        lastItemName="";
+        lastItemName = "";
         Utils.consolePrint("Current item set - " + itemNames.toString());
     }
 
     private enum InputKey implements BotBase.InputKey {
-        clear("Clear item list",""),
+        clear("Clear item list", ""),
         st("Set the target item(under mouse pointer). Items from your inventory will be moved inside this item if it is a container or next to it otherwise.", ""),
         stid("Set the id of target item. Items from your inventory will be moved inside this item if it is a container or next to it otherwise.", "id"),
         str("Set the target container(under mouse pointer). Items from your inventory will be moved to the root directory of that container.", ""),
@@ -291,8 +294,9 @@ public class ItemMoverBot extends BotBase {
                 "Items that match added keywords but lying inside a group or a container will not be touched. " +
                 "Enabled by default", "");
 
-        private String description;
-        private String usage;
+        private final String description;
+        private final String usage;
+
         InputKey(String description, String usage) {
             this.description = description;
             this.usage = usage;

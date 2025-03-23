@@ -25,44 +25,41 @@ import java.util.stream.Collectors;
 
 
 public class TreeCutterBot extends BotBase {
+    public String[] Axes = {"hatchet", "small axe", "axe", "huge axe", "longsword", "two handed sword", "short sword", "shovel", "pickaxe", "sickle", "rake", "scythe"};
     private float staminaThreshold;
     private int maxActions;
-
     private TreeAge minTreeAge;
     private String treeType;
     private boolean bushCutting;
     private boolean sproutingTreeCutting;
-
     private long hatchetId;
     private long lastActionFinishedTime;
-    private Byte[] sproutingAgeId = {7,9,11,13};
-    public String[] Axes = {"hatchet", "small axe", "axe", "huge axe", "longsword", "two handed sword", "short sword", "shovel", "pickaxe", "sickle", "rake", "scythe"};
+    private final Byte[] sproutingAgeId = {7, 9, 11, 13};
+    private final AreaAssistant areaAssistant = new AreaAssistant(this);
+    private final List<Pair<Integer, Integer>> queuedTiles = new ArrayList<>();
 
-    private AreaAssistant areaAssistant = new AreaAssistant(this);
-    private List<Pair<Integer, Integer>> queuedTiles = new ArrayList<>();
-
-    public static BotRegistration getRegistration() {
-        return new BotRegistration(TreeCutterBot.class,
-                "Cut trees", "tc");
-    }
-
-    public TreeCutterBot(){
+    public TreeCutterBot() {
         registerInputHandler(InputKey.s, this::setStaminaThreshold);
         registerInputHandler(InputKey.c, this::setMaxActions);
         registerInputHandler(InputKey.a, this::setMinAge);
-        registerInputHandler(InputKey.axe, input->setAxe());
-        registerInputHandler(InputKey.al, input-> showAgesList());
+        registerInputHandler(InputKey.axe, input -> setAxe());
+        registerInputHandler(InputKey.al, input -> showAgesList());
         registerInputHandler(InputKey.tt, this::setTreeType);
-        registerInputHandler(InputKey.b, input-> toggleBushCutting());
-        registerInputHandler(InputKey.sp, input-> toggleSproutingTreeCutting());
+        registerInputHandler(InputKey.b, input -> toggleBushCutting());
+        registerInputHandler(InputKey.sp, input -> toggleSproutingTreeCutting());
 
         areaAssistant.setMoveAheadDistance(1);
         areaAssistant.setMoveRightDistance(1);
 
         bushCutting = false;
         sproutingTreeCutting = true;
-        minTreeAge=TreeAge.any;
-        treeType="";
+        minTreeAge = TreeAge.any;
+        treeType = "";
+    }
+
+    public static BotRegistration getRegistration() {
+        return new BotRegistration(TreeCutterBot.class,
+                "Cut trees", "tc");
     }
 
     @Override
@@ -99,10 +96,10 @@ public class TreeCutterBot extends BotBase {
                 queuedTiles.clear();
 
             if ((stamina + damage) > staminaThreshold && queuedTiles.size() == 0) {
-                int checkedtiles[][] = Utils.getAreaCoordinates();
+                int[][] checkedtiles = Utils.getAreaCoordinates();
                 int tileIndex = -1;
 
-                while (++tileIndex < 9 && queuedTiles.size() < maxActions){
+                while (++tileIndex < 9 && queuedTiles.size() < maxActions) {
                     Pair<Integer, Integer> coordsPair = new Pair<>(checkedtiles[tileIndex][0], checkedtiles[tileIndex][1]);
                     if (queuedTiles.contains(coordsPair))
                         continue;
@@ -125,7 +122,7 @@ public class TreeCutterBot extends BotBase {
                         FoliageAge fage = FoliageAge.getFoliageAge(tileData);
                         TreeData.TreeType ttype = tileType.getTreeType(tileData);
 
-                        boolean isRightAge=fage.getAgeId() >= minTreeAge.id;
+                        boolean isRightAge = fage.getAgeId() >= minTreeAge.id;
                         boolean isCutSprouts = sproutingTreeCutting || !Arrays.asList(sproutingAgeId).contains(fage.getAgeId());
                         boolean isRightType = treeType.equals("") || treeType.contains(TreeData.TreeType.fromInt(ttype.getTypeId()).toString().toLowerCase());
                         boolean isHive = false;
@@ -138,7 +135,7 @@ public class TreeCutterBot extends BotBase {
                                 }
                             }
                         }
-                        if(isRightAge && isCutSprouts && isRightType && !isHive){
+                        if (isRightAge && isCutSprouts && isRightType && !isHive) {
                             world.getServerConnection().sendAction(hatchetId,
                                     new long[]{Tiles.getTileId(checkedtiles[tileIndex][0], checkedtiles[tileIndex][1], 0)},
                                     PlayerAction.CUT_DOWN);
@@ -156,7 +153,7 @@ public class TreeCutterBot extends BotBase {
     }
 
     private void registerEventProcessors() {
-        registerEventProcessor(message -> message.contains("You are too far away") ,
+        registerEventProcessor(message -> message.contains("You are too far away"),
                 this::actionNotQueued);
         registerEventProcessor(message -> (message.contains("You stop cutting down.")
                         || message.contains("You cut down the ")
@@ -173,12 +170,12 @@ public class TreeCutterBot extends BotBase {
 
     private void actionNotQueued() {
         if (queuedTiles.size() > 0) {
-            queuedTiles.remove(queuedTiles.size()  - 1);
+            queuedTiles.remove(queuedTiles.size() - 1);
             lastActionFinishedTime = System.currentTimeMillis();
         }
     }
 
-    private void setStaminaThreshold(String input[]) {
+    private void setStaminaThreshold(String[] input) {
         if (input == null || input.length != 1)
             printInputKeyUsageString(TreeCutterBot.InputKey.s);
         else {
@@ -192,21 +189,23 @@ public class TreeCutterBot extends BotBase {
     }
 
     private void setTreeType(String[] strings) {
-        if (strings == null ) {
+        if (strings == null) {
             printInputKeyUsageString(TreeCutterBot.InputKey.tt);
             return;
         }
 
         treeType = String.join(" ", strings).toLowerCase();
-        Utils.consolePrint("The bot cut " +treeType);
+        Utils.consolePrint("The bot cut " + treeType);
     }
+
     private void toggleBushCutting() {
-        bushCutting=!bushCutting;
+        bushCutting = !bushCutting;
         if (bushCutting)
             Utils.consolePrint("Bushes cutting is on!");
         else
             Utils.consolePrint("Bushes cutting is off!");
     }
+
     private void toggleSproutingTreeCutting() {
         sproutingTreeCutting = !sproutingTreeCutting;
         if (sproutingTreeCutting)
@@ -214,6 +213,7 @@ public class TreeCutterBot extends BotBase {
         else
             Utils.consolePrint("Sprouting trees cutting is off!");
     }
+
     private void setMinAge(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(TreeCutterBot.InputKey.a);
@@ -221,7 +221,7 @@ public class TreeCutterBot extends BotBase {
         }
         minTreeAge = TreeAge.getByNameOrAbbreviation(input[0]);
 
-        Utils.consolePrint("Minimal tree age set to " +minTreeAge.name+"!");
+        Utils.consolePrint("Minimal tree age set to " + minTreeAge.name + "!");
     }
 
     private void setMaxActions(String[] input) {
@@ -232,7 +232,7 @@ public class TreeCutterBot extends BotBase {
         setMaxActions(Integer.parseInt(input[0]));
     }
 
-    private void setMaxActions(int num){
+    private void setMaxActions(int num) {
         this.maxActions = num;
         Utils.consolePrint(getClass().getSimpleName() + " will do " + maxActions + " chops each time");
     }
@@ -259,7 +259,7 @@ public class TreeCutterBot extends BotBase {
 
     private void showAgesList() {
         Utils.consolePrint("Age abbreviation");
-        for(TreeAge age : TreeAge.values())
+        for (TreeAge age : TreeAge.values())
             Utils.consolePrint(age.name + " " + age.name());
     }
 
@@ -276,6 +276,7 @@ public class TreeCutterBot extends BotBase {
 
         public String description;
         public String usage;
+
         InputKey(String description, String usage) {
             this.description = description;
             this.usage = usage;
@@ -299,20 +300,19 @@ public class TreeCutterBot extends BotBase {
 
     private enum TreeAge {
         //any, mature, old, very old, overaged, shivered
-        any(0,"any"),
-        m(4,"mature"),
-        o(8,"old"),
-        vo(12,"very old"),
-        oa(14,"overaged"),
-        s(15,"shriveled");
-
-        TreeAge(int id, String name){
-            this.id=id;
-            this.name=name;
-        }
+        any(0, "any"),
+        m(4, "mature"),
+        o(8, "old"),
+        vo(12, "very old"),
+        oa(14, "overaged"),
+        s(15, "shriveled");
 
         public int id;
         public String name;
+        TreeAge(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
 
         static TreeAge getByNameOrAbbreviation(String input) {
             for (TreeAge treeAge : values())

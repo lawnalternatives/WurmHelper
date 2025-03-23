@@ -11,11 +11,18 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class GuardBot extends BotBase {
-    private static Set <String> keywords;
+    private static Set<String> keywords;
     private static long lastEvent;
 
     private String customSound;
     private long alarmTimeout;
+
+    public GuardBot() {
+        registerInputHandler(GuardBot.InputKey.a, this::addKeyword);
+        registerInputHandler(GuardBot.InputKey.at, this::setAlarmTimeout);
+        registerInputHandler(GuardBot.InputKey.soundtest, input -> playSound());
+        registerInputHandler(GuardBot.InputKey.cs, this::setSoundFileName);
+    }
 
     public static BotRegistration getRegistration() {
         return new BotRegistration(GuardBot.class,
@@ -26,15 +33,27 @@ public class GuardBot extends BotBase {
                 "g");
     }
 
-    public GuardBot() {
-        registerInputHandler(GuardBot.InputKey.a, this::addKeyword);
-        registerInputHandler(GuardBot.InputKey.at, this::setAlarmTimeout);
-        registerInputHandler(GuardBot.InputKey.soundtest, input -> playSound());
-        registerInputHandler(GuardBot.InputKey.cs, this::setSoundFileName);
+    public static void processEvent(String message) {
+        if (keywords == null)
+            lastEvent = System.currentTimeMillis();
+        else
+            for (String keyword : keywords)
+                if (message.contains(keyword)) {
+                    lastEvent = System.currentTimeMillis();
+                    return;
+                }
+    }
+
+    private static void addKeyword(String keyword) {
+        if (keywords == null)
+            keywords = new HashSet<>();
+        keywords.add(keyword);
+        Utils.consolePrint("Current keyword set in GuardBot - " + keywords);
+
     }
 
     @Override
-    public void work() throws Exception{
+    public void work() throws Exception {
         lastEvent = System.currentTimeMillis();
         setAlarmTimeout(300000);
         while (isActive()) {
@@ -87,7 +106,7 @@ public class GuardBot extends BotBase {
         }
     }
 
-    private void addKeyword(String []input) {
+    private void addKeyword(String[] input) {
         if (input == null || input.length == 0) {
             printInputKeyUsageString(GuardBot.InputKey.a);
             return;
@@ -98,26 +117,7 @@ public class GuardBot extends BotBase {
         addKeyword(keyword.toString());
     }
 
-    public static void processEvent(String message) {
-        if (keywords == null)
-            lastEvent = System.currentTimeMillis();
-        else
-            for(String keyword:keywords)
-                if (message.contains(keyword)) {
-                    lastEvent = System.currentTimeMillis();
-                    return;
-                }
-    }
-
-    private static void addKeyword(String keyword) {
-        if (keywords == null)
-            keywords = new HashSet<>();
-        keywords.add(keyword);
-        Utils.consolePrint("Current keyword set in GuardBot - " + keywords.toString());
-
-    }
-
-    private void setSoundFileName(String [] input) {
+    private void setSoundFileName(String[] input) {
         if (input == null || input.length == 0) {
             printInputKeyUsageString(GuardBot.InputKey.cs);
             return;
@@ -138,8 +138,9 @@ public class GuardBot extends BotBase {
         cs("Set a path to a custom sound file for alarm. Use .wav file", "path"),
         soundtest("Plays the alarm sound", "");
 
-        private String description;
-        private String usage;
+        private final String description;
+        private final String usage;
+
         InputKey(String description, String usage) {
             this.description = description;
             this.usage = usage;

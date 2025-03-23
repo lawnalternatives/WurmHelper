@@ -18,18 +18,18 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class MinerBot extends BotBase {
-    private SmeltingOptions smeltingOptions = new SmeltingOptions();
+    private static int[] lastTile;
+    private static final Set<Pair<Integer, Integer>> errorTiles = new HashSet<>();
+    private static long lastMining;
+    private final SmeltingOptions smeltingOptions = new SmeltingOptions();
     private MiningMode miningMode = MiningMode.Unknown;
     private float staminaThreshold;
     private InventoryMetaItem pickaxe;
     private long fixedTileId;
-    private static int[] lastTile;
-    private static Set<Pair<Integer, Integer>> errorTiles = new HashSet<>();
-    private static long lastMining;
     private int clicks = 2;
     private boolean shardsCombining;
     private String shards = "rock shards";
-    private String  fuel = "kindling";
+    private String fuel = "kindling";
     private long fuellingTimeout = 300000;
     private long lastFuelling;
     private boolean moving;
@@ -37,13 +37,8 @@ public class MinerBot extends BotBase {
     private boolean smelting = false;
     private boolean verbose = false;
     private boolean noOre;
-    private Random random = new Random();
+    private final Random random = new Random();
     private Direction direction = Direction.FORWARD;
-
-    public static BotRegistration getRegistration() {
-        return new BotRegistration(MinerBot.class,
-                "Mines rocks and smelts ores.", "m");
-    }
 
     public MinerBot() {
         registerInputHandler(MinerBot.InputKey.s, this::setStaminaThreshold);
@@ -68,8 +63,22 @@ public class MinerBot extends BotBase {
         registerInputHandler(MinerBot.InputKey.dir, this::handleDirectionChange);
     }
 
+    public static BotRegistration getRegistration() {
+        return new BotRegistration(MinerBot.class,
+                "Mines rocks and smelts ores.", "m");
+    }
+
+    static private boolean isMinableTile(Tiles.Tile type) {
+        return type.tilename.equals("Cave") || type.tilename.equals("Reinforced cave");
+    }
+
+    private static void tileError() {
+        if (lastTile != null)
+            errorTiles.add(new Pair<>(lastTile[0], lastTile[1]));
+    }
+
     @Override
-    public void work() throws Exception{
+    public void work() throws Exception {
         staminaThreshold = 0.96f;
         pickaxe = Utils.getInventoryItem("pickaxe");
         if (pickaxe == null) {
@@ -105,8 +114,8 @@ public class MinerBot extends BotBase {
                     GroundItemCellRenderable groundItem = entry.getValue();
                     GroundItemData groundItemData = ReflectionUtil.getPrivateField(groundItem,
                             ReflectionUtil.getField(groundItem.getClass(), "item"));
-                    int itemX = (int) (groundItemData.getX()/4);
-                    int itemY = (int) (groundItemData.getY()/4);
+                    int itemX = (int) (groundItemData.getX() / 4);
+                    int itemY = (int) (groundItemData.getY() / 4);
                     if (itemX == tileX && itemY == tileY && groundItem.getHoverName().toLowerCase().contains("pile of ")) {
                         closePileIds.add(groundItem.getId());
                         if (piles.stream().noneMatch(pile -> {
@@ -151,13 +160,14 @@ public class MinerBot extends BotBase {
 
                 }
                 if (itemsToTake.size() > 1 && freeSpace < 20) {
-                    if (verbose) Utils.consolePrint("Taking " + itemsToTake.stream().map(InventoryMetaItem::getId).collect(Collectors.toList()));
+                    if (verbose)
+                        Utils.consolePrint("Taking " + itemsToTake.stream().map(InventoryMetaItem::getId).collect(Collectors.toList()));
                     for (InventoryMetaItem item : itemsToTake)
                         Mod.hud.sendAction(PlayerAction.TAKE, item.getId());
                 }
                 List<InventoryMetaItem> invShards = Utils.getInventoryItems(shards);
                 if (invShards.size() > 1) {
-                    long ids[] = new long[invShards.size()];
+                    long[] ids = new long[invShards.size()];
                     for (int i = 0; i < invShards.size(); i++)
                         ids[i] = invShards.get(i).getId();
                     if (verbose) Utils.consolePrint("Combining " + Arrays.toString(ids));
@@ -196,7 +206,7 @@ public class MinerBot extends BotBase {
                         break;
                     }
                     case Area: {
-                        int area[][] = Utils.getAreaCoordinates();
+                        int[][] area = Utils.getAreaCoordinates();
                         for (int i = 1; i < area.length; i += 2) {
                             Tiles.Tile type = Mod.hud.getWorld().getCaveBuffer().getTileType(area[i][0], area[i][1]);
                             if ((type.tilename.equals("Cave wall") || type.tilename.equals("Rocksalt") || (type.isOreCave() && !noOre))
@@ -211,7 +221,7 @@ public class MinerBot extends BotBase {
                         break;
                     }
                     case FrontTile: {
-                        int area[][] = Utils.getAreaCoordinates();
+                        int[][] area = Utils.getAreaCoordinates();
                         Tiles.Tile type = Mod.hud.getWorld().getCaveBuffer().getTileType(area[7][0], area[7][1]);
                         if ((type.tilename.equals("Cave wall") || type.tilename.equals("Rocksalt") || (type.isOreCave() && !noOre))
                                 && !isErrorTile(area[7][0], area[7][1])) {
@@ -228,7 +238,7 @@ public class MinerBot extends BotBase {
                         break;
                 }
                 if ((!actionTaken || Math.abs(lastMining - System.currentTimeMillis()) > 120000) && moving) {
-                    int area[][] = Utils.getAreaCoordinates();
+                    int[][] area = Utils.getAreaCoordinates();
                     Tiles.Tile frontTileType = Mod.hud.getWorld().getCaveBuffer().getTileType(area[7][0], area[7][1]);
                     Tiles.Tile rightTileType = Mod.hud.getWorld().getCaveBuffer().getTileType(area[5][0], area[5][1]);
                     Tiles.Tile leftTileType = Mod.hud.getWorld().getCaveBuffer().getTileType(area[3][0], area[3][1]);
@@ -304,8 +314,8 @@ public class MinerBot extends BotBase {
                         InventoryMetaItem item = Utils.getInventoryItem(fuel);
                         if (item != null)
                             Mod.hud.getWorld().getServerConnection().sendAction(item.getId(),
-                                        new long[]{Utils.getRootItem(smeltingOptions.smelter).getId()},
-                                        new PlayerAction("",(short)117, PlayerAction.ANYTHING));
+                                    new long[]{Utils.getRootItem(smeltingOptions.smelter).getId()},
+                                    new PlayerAction("", (short) 117, PlayerAction.ANYTHING));
                         else
                             Utils.consolePrint("No fuel in inventory!");
                     }
@@ -315,17 +325,13 @@ public class MinerBot extends BotBase {
         }
     }
 
-    static private boolean isMinableTile(Tiles.Tile type) {
-        return type.tilename.equals("Cave") || type.tilename.equals("Reinforced cave");
-    }
-
     private void handleDirectionChange(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(MinerBot.InputKey.dir);
             printCurrentDirection();
             return;
         }
-        
+
         Direction newDirection = Direction.getByAbbreviation(input[0]);
         if (newDirection == Direction.UNKNOWN) {
             printInputKeyUsageString(MinerBot.InputKey.dir);
@@ -342,10 +348,10 @@ public class MinerBot extends BotBase {
 
     private void toggleVerboseMode() {
         verbose = !verbose;
-        Utils.consolePrint(getClass().getSimpleName() + " is " + (verbose?"":"not ") + "verbose");
+        Utils.consolePrint(getClass().getSimpleName() + " is " + (verbose ? "" : "not ") + "verbose");
     }
 
-    private void setFuellingTimeout(String [] input) {
+    private void setFuellingTimeout(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(MinerBot.InputKey.sft);
             return;
@@ -358,7 +364,7 @@ public class MinerBot extends BotBase {
         }
     }
 
-    private void setFuelName(String []input) {
+    private void setFuelName(String[] input) {
         if (input == null || input.length == 0) {
             printInputKeyUsageString(MinerBot.InputKey.sfn);
             return;
@@ -370,7 +376,7 @@ public class MinerBot extends BotBase {
         Utils.consolePrint("New fuel name is " + this.fuel);
     }
 
-    private void addTarget(String []input) {
+    private void addTarget(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(MinerBot.InputKey.at);
             return;
@@ -392,7 +398,7 @@ public class MinerBot extends BotBase {
         }
     }
 
-    private void addTargetById(String []input) {
+    private void addTargetById(String[] input) {
         if (input == null || input.length != 2) {
             printInputKeyUsageString(MinerBot.InputKey.atid);
             return;
@@ -400,16 +406,16 @@ public class MinerBot extends BotBase {
         try {
             long id = Long.parseLong(input[0]);
             float q = Float.parseFloat(input[1]);
-            smeltingOptions.containers.add(new Pair<>(id,  q));
+            smeltingOptions.containers.add(new Pair<>(id, q));
             smeltingOptions.containers.sort(Comparator.comparingDouble(Pair::getValue));
             Utils.consolePrint("Added a new target with id - " + id +
                     " and minimum quality - " + String.format("%.2f", q));
-        } catch(NumberFormatException e) {
+        } catch (NumberFormatException e) {
             Utils.consolePrint("Invalid values!");
         }
     }
 
-    private void addTargetInventory(String []input) {
+    private void addTargetInventory(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(MinerBot.InputKey.ati);
             return;
@@ -438,8 +444,7 @@ public class MinerBot extends BotBase {
         if (moving) {
             Utils.stabilizePlayer();
             Utils.consolePrint(getClass().getSimpleName() + " will automatically moving forward");
-        }
-        else
+        } else
             Utils.consolePrint(getClass().getSimpleName() + " will NOT move automatically");
     }
 
@@ -466,7 +471,7 @@ public class MinerBot extends BotBase {
         Utils.consolePrint(getClass().getSimpleName() + " will mine the selected tile");
     }
 
-    private void setClicksNumber(String []input) {
+    private void setClicksNumber(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(MinerBot.InputKey.c);
             return;
@@ -482,7 +487,7 @@ public class MinerBot extends BotBase {
         }
     }
 
-    private void setCombiningShardsName(String []input) {
+    private void setCombiningShardsName(String[] input) {
         if (input == null || input.length == 0) {
             printInputKeyUsageString(MinerBot.InputKey.scn);
             return;
@@ -524,11 +529,6 @@ public class MinerBot extends BotBase {
             Utils.consolePrint("Shards combining is off");
     }
 
-    private static void tileError() {
-        if (lastTile != null)
-            errorTiles.add(new Pair<>(lastTile[0], lastTile[1]));
-    }
-
     private boolean isErrorTile(int x, int y) {
         Pair pair = new Pair<>(x, y);
         return errorTiles.contains(pair);
@@ -556,7 +556,7 @@ public class MinerBot extends BotBase {
         registerEventProcessor(message -> message.contains("You mine "), () -> lastMining = System.currentTimeMillis());
     }
 
-    private void sendMineActions(int coords[]) {
+    private void sendMineActions(int[] coords) {
         //wallside is 5 for north, 4 for west, 3 for south, 2 for east
         int x = Mod.hud.getWorld().getPlayerCurrentTileX();
         int y = Mod.hud.getWorld().getPlayerCurrentTileY();
@@ -608,7 +608,7 @@ public class MinerBot extends BotBase {
                     direction.action);
     }
 
-    private void setStaminaThreshold(String input[]) {
+    private void setStaminaThreshold(String[] input) {
         if (input == null || input.length != 1)
             printInputKeyUsageString(MinerBot.InputKey.s);
         else {
@@ -680,13 +680,7 @@ public class MinerBot extends BotBase {
         }
     }
 
-    static class SmeltingOptions {
-        InventoryListComponent smelter;
-        InventoryListComponent pile;
-        ArrayList<Pair<Long, Float>> containers = new ArrayList<>();
-    }
-
-    enum MiningMode{
+    enum MiningMode {
         Unknown,
         SelectedTile,
         Area,
@@ -717,8 +711,9 @@ public class MinerBot extends BotBase {
         v("Toggle the verbose mode. While verbose bot will show additional info in console", ""),
         dir("Set mining direction. Possible directions are: f - forward, u - upward, d - downward. Forward is default direction.", "direction");
 
-        private String description;
-        private String usage;
+        private final String description;
+        private final String usage;
+
         InputKey(String description, String usage) {
             this.description = description;
             this.usage = usage;
@@ -748,17 +743,23 @@ public class MinerBot extends BotBase {
 
         String abbreviation;
         PlayerAction action;
-        Direction(String abbreviation, PlayerAction action)
-        {
+
+        Direction(String abbreviation, PlayerAction action) {
             this.abbreviation = abbreviation;
             this.action = action;
         }
 
         static Direction getByAbbreviation(String abbreviation) {
-            for(Direction direction : values())
+            for (Direction direction : values())
                 if (direction.abbreviation.equals(abbreviation))
                     return direction;
             return UNKNOWN;
         }
+    }
+
+    static class SmeltingOptions {
+        InventoryListComponent smelter;
+        InventoryListComponent pile;
+        ArrayList<Pair<Long, Float>> containers = new ArrayList<>();
     }
 }

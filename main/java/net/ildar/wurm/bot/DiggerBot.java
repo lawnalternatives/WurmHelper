@@ -17,9 +17,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class DiggerBot extends BotBase {
+    public static Tiles.Tile[] DirtList = {Tiles.Tile.TILE_DIRT, Tiles.Tile.TILE_GRASS, Tiles.Tile.TILE_SAND, Tiles.Tile.TILE_MYCELIUM, Tiles.Tile.TILE_TUNDRA, Tiles.Tile.TILE_STEPPE};
     private final int STEPS = 5;
-
-    private long stepDuration;
+    private final long stepDuration;
     private int clicks;
     private float staminaThreshold;
     private WorkMode workMode;
@@ -27,19 +27,12 @@ public class DiggerBot extends BotBase {
     private boolean levellingDone;
     private boolean toolRepairing = true;
     private DiggingTileInfo diggingTileInfo;
-    private AreaAssistant areaAssistant;
+    private final AreaAssistant areaAssistant;
     private InventoryMetaItem shovelItem;
     private PlayerAction digAction;
-    private Set<Pair<Integer, Integer>> invalidCorners;
+    private final Set<Pair<Integer, Integer>> invalidCorners;
     private boolean surfaceMiningMode;
     private InventoryMetaItem pickaxeItem;
-
-    public static Tiles.Tile[] DirtList = {Tiles.Tile.TILE_DIRT, Tiles.Tile.TILE_GRASS, Tiles.Tile.TILE_SAND, Tiles.Tile.TILE_MYCELIUM, Tiles.Tile.TILE_TUNDRA, Tiles.Tile.TILE_STEPPE};
-
-    public static BotRegistration getRegistration() {
-        return new BotRegistration(DiggerBot.class,
-                "Does the dirty job for you", "d");
-    }
 
     public DiggerBot() {
         registerInputHandler(DiggerBot.InputKey.s, this::setStaminaThreshold);
@@ -59,6 +52,11 @@ public class DiggerBot extends BotBase {
         digAction = PlayerAction.DIG_TO_PILE;
         workMode = WorkMode.Unknown;
         stepDuration = 1000;
+    }
+
+    public static BotRegistration getRegistration() {
+        return new BotRegistration(DiggerBot.class,
+                "Does the dirty job for you", "d");
     }
 
     private void registerEventProcessors() {
@@ -82,7 +80,7 @@ public class DiggerBot extends BotBase {
     }
 
     @Override
-    protected void work() throws Exception{
+    protected void work() throws Exception {
         shovelItem = Utils.getInventoryItem("shovel");
         if (shovelItem == null) {
             Utils.consolePrint("Player doesn't have a shovel!");
@@ -118,7 +116,7 @@ public class DiggerBot extends BotBase {
                         }
                         break;
                     }
-                    case DiggingTile:{
+                    case DiggingTile: {
                         boolean actionsMade = doDigActions();
                         if (!actionsMade) {
                             if (validCornersExists())
@@ -126,10 +124,10 @@ public class DiggerBot extends BotBase {
                             else {
                                 Utils.movePlayerBySteps(diggingTileInfo.x * 4 + 2, diggingTileInfo.y * 4 + 2, STEPS, stepDuration);
                                 if (areaAssistant.areaTourActivated()) {
-                                    while(areaAssistant.areaTourActivated()) {
+                                    while (areaAssistant.areaTourActivated()) {
                                         areaAssistant.areaNextPosition();
-                                        diggingTileInfo.x = (int)(Mod.hud.getWorld().getPlayerPosX() / 4);
-                                        diggingTileInfo.y = (int)(Mod.hud.getWorld().getPlayerPosY() / 4);
+                                        diggingTileInfo.x = (int) (Mod.hud.getWorld().getPlayerPosX() / 4);
+                                        diggingTileInfo.y = (int) (Mod.hud.getWorld().getPlayerPosY() / 4);
                                         if (validCornersExists()) {
                                             moveToNextTileCorner();
                                             break;
@@ -199,8 +197,8 @@ public class DiggerBot extends BotBase {
         int minH = Integer.MAX_VALUE;
         int maxH = Integer.MIN_VALUE;
         boolean highCornerSurroundedWithDirt = true;
-        for(int dx = 0; dx < 2; dx++) {
-            for(int dy = 0; dy < 2; dy++) {
+        for (int dx = 0; dx < 2; dx++) {
+            for (int dy = 0; dy < 2; dy++) {
                 int h = (int) (Mod.hud.getWorld().getNearTerrainBuffer().getHeight(x + dx, y + dy) * 10);
                 if (h > maxH) {
                     maxH = h;
@@ -222,10 +220,10 @@ public class DiggerBot extends BotBase {
         return minH < diggingHeightLimit && maxH != minH;
     }
 
-    private void stopDiggingIfHeightIsLower(Object progressBar) throws Exception{
+    private void stopDiggingIfHeightIsLower(Object progressBar) throws Exception {
         int x = Math.round(Mod.hud.getWorld().getPlayerPosX() / 4);
         int y = Math.round(Mod.hud.getWorld().getPlayerPosY() / 4);
-        int h = (int) (Mod.hud.getWorld().getNearTerrainBuffer().getHeight(x, y)* 10);
+        int h = (int) (Mod.hud.getWorld().getNearTerrainBuffer().getHeight(x, y) * 10);
         String actionKey = "digging";
         if (surfaceMiningMode)
             actionKey = "mining";
@@ -238,7 +236,6 @@ public class DiggerBot extends BotBase {
     }
 
     /**
-     *
      * @return true if actions were made
      */
     private boolean doDigActions() {
@@ -247,18 +244,18 @@ public class DiggerBot extends BotBase {
         Tiles.Tile tileType = Mod.hud.getWorld().getNearTerrainBuffer().getTileType(x, y);
         if (isCornerInvalid(x, y))
             return false;
-        int h = (int) (Mod.hud.getWorld().getNearTerrainBuffer().getHeight(x, y)* 10);
+        int h = (int) (Mod.hud.getWorld().getNearTerrainBuffer().getHeight(x, y) * 10);
         if (h > diggingHeightLimit) {
             if (Mod.hud.getWorld().getPlayerLayer() < 0)
                 return false;
             int neededClicks = Math.min(h - diggingHeightLimit, clicks);
             if (surfaceMiningMode) {
                 for (int i = 0; i < neededClicks; i++) {
-                    if(isTileRock(tileType)) {
+                    if (isTileRock(tileType)) {
                         Mod.hud.getWorld().getServerConnection().sendAction(pickaxeItem.getId(),
                                 new long[]{Tiles.getTileId(x, y, 0)},
                                 PlayerAction.MINE_FORWARD);
-                    }else if(isTileDirt(tileType)){
+                    } else if (isTileDirt(tileType)) {
                         Mod.hud.getWorld().getServerConnection().sendAction(shovelItem.getId(),
                                 new long[]{Tiles.getTileId(x, y, 0)},
                                 digAction);
@@ -278,9 +275,9 @@ public class DiggerBot extends BotBase {
     }
 
     private boolean areSurroundingTilesRocks(int x, int y) {
-        for(int dx = 0; dx < 2; dx++)
-            for(int dy = 0; dy < 2; dy++) {
-                Tiles.Tile tileType = Mod.hud.getWorld().getNearTerrainBuffer().getTileType(x-dx, y-dy);
+        for (int dx = 0; dx < 2; dx++)
+            for (int dy = 0; dy < 2; dy++) {
+                Tiles.Tile tileType = Mod.hud.getWorld().getNearTerrainBuffer().getTileType(x - dx, y - dy);
                 if (tileType != Tiles.Tile.TILE_ROCK)
                     return false;
             }
@@ -288,9 +285,9 @@ public class DiggerBot extends BotBase {
     }
 
     private boolean isRockTileNear(int x, int y) {
-        for(int dx = 0; dx < 2; dx++)
-            for(int dy = 0; dy < 2; dy++) {
-                Tiles.Tile tileType = Mod.hud.getWorld().getNearTerrainBuffer().getTileType(x-dx, y-dy);
+        for (int dx = 0; dx < 2; dx++)
+            for (int dy = 0; dy < 2; dy++) {
+                Tiles.Tile tileType = Mod.hud.getWorld().getNearTerrainBuffer().getTileType(x - dx, y - dy);
                 if (tileType == Tiles.Tile.TILE_ROCK) {
                     return true;
                 }
@@ -304,15 +301,15 @@ public class DiggerBot extends BotBase {
         invalidCorners.add(new Pair<>(x, y));
     }
 
-    private void clearInvalidCorners(){
+    private void clearInvalidCorners() {
         invalidCorners.clear();
     }
 
     private boolean validCornersExists() {
         if (workMode != WorkMode.DiggingTile)
             return false;
-        for(int dx = 0; dx < 2; dx++)
-            for(int dy = 0; dy < 2; dy++) {
+        for (int dx = 0; dx < 2; dx++)
+            for (int dy = 0; dy < 2; dy++) {
                 int x = diggingTileInfo.x + dx;
                 int y = diggingTileInfo.y + dy;
                 if (isCornerInvalid(x, y)) {
@@ -325,32 +322,33 @@ public class DiggerBot extends BotBase {
         return false;
     }
 
-    private boolean isTileRock(int x, int y){
-        Tiles.Tile t = Mod.hud.getWorld().getNearTerrainBuffer().getTileType(x,y);
+    private boolean isTileRock(int x, int y) {
+        Tiles.Tile t = Mod.hud.getWorld().getNearTerrainBuffer().getTileType(x, y);
         return isTileRock(t);
     }
-    private boolean isTileRock(Tiles.Tile t){
+
+    private boolean isTileRock(Tiles.Tile t) {
         return t == Tiles.Tile.TILE_ROCK;
     }
-    private boolean isTileDirt(int x, int y){
-        Tiles.Tile t = Mod.hud.getWorld().getNearTerrainBuffer().getTileType(x,y);
+
+    private boolean isTileDirt(int x, int y) {
+        Tiles.Tile t = Mod.hud.getWorld().getNearTerrainBuffer().getTileType(x, y);
         return isTileDirt(t);
     }
-    private boolean isTileDirt(Tiles.Tile t){
+
+    private boolean isTileDirt(Tiles.Tile t) {
         return Arrays.asList(DirtList).contains(t);
     }
 
     private boolean isCornerInvalid(int x, int y) {
         if (invalidCorners.contains(new Pair<>(x, y)))
             return true;
-        if (surfaceMiningMode && !areSurroundingTilesRocks(x, y) && isTileRock(x,y) )
+        if (surfaceMiningMode && !areSurroundingTilesRocks(x, y) && isTileRock(x, y))
             return true;
-        if (!surfaceMiningMode && isRockTileNear(x, y))
-            return true;
-        return false;
+        return !surfaceMiningMode && isRockTileNear(x, y);
     }
 
-    private void moveToNextTileCorner() throws InterruptedException{
+    private void moveToNextTileCorner() throws InterruptedException {
         if (workMode != WorkMode.DiggingTile)
             return;
         int x = Math.round(Mod.hud.getWorld().getPlayerPosX() / 4);
@@ -364,7 +362,7 @@ public class DiggerBot extends BotBase {
         int destY = y;
         int tries = 0;
         boolean cornerFound = false;
-        while(tries++ <= 4) {
+        while (tries++ <= 4) {
             if (destX == diggingTileInfo.x && destY == diggingTileInfo.y)
                 ++destX;
             else if (destX == diggingTileInfo.x + 1 && destY == diggingTileInfo.y)
@@ -411,7 +409,7 @@ public class DiggerBot extends BotBase {
     }
 
 
-    private void toggleLevellingArea(String [] input) {
+    private void toggleLevellingArea(String[] input) {
         if (workMode != WorkMode.LevellingArea) {
             if (input == null || input.length != 1) {
                 printInputKeyUsageString(DiggerBot.InputKey.la);
@@ -442,7 +440,7 @@ public class DiggerBot extends BotBase {
         }
     }
 
-    private void toggleDigging(String []input) {
+    private void toggleDigging(String[] input) {
         if (workMode != WorkMode.Digging) {
             if (input == null || input.length != 1) {
                 printInputKeyUsageString(DiggerBot.InputKey.d);
@@ -462,7 +460,7 @@ public class DiggerBot extends BotBase {
         }
     }
 
-    private void toggleTileDiggingMode(String []input) {
+    private void toggleTileDiggingMode(String[] input) {
         if (workMode != WorkMode.DiggingTile) {
             if (input == null || input.length != 1) {
                 printInputKeyUsageString(DiggerBot.InputKey.dtile);
@@ -476,13 +474,13 @@ public class DiggerBot extends BotBase {
             }
             try {
                 diggingTileInfo = new DiggingTileInfo();
-                diggingTileInfo.x = (int)(Mod.hud.getWorld().getPlayerPosX() / 4);
-                diggingTileInfo.y = (int)(Mod.hud.getWorld().getPlayerPosY() / 4);
+                diggingTileInfo.x = (int) (Mod.hud.getWorld().getPlayerPosX() / 4);
+                diggingTileInfo.y = (int) (Mod.hud.getWorld().getPlayerPosY() / 4);
                 moveToNextTileCorner();
                 workMode = WorkMode.DiggingTile;
-                Utils.consolePrint("The digging of tile (" +diggingTileInfo.x + "," + diggingTileInfo.y + ") is on");
+                Utils.consolePrint("The digging of tile (" + diggingTileInfo.x + "," + diggingTileInfo.y + ") is on");
                 areaAssistant.setMoveRightDistance(2);
-            } catch(Exception e) {
+            } catch (Exception e) {
                 Utils.consolePrint("Error on turning the tile digging on");
             }
         } else {
@@ -491,7 +489,7 @@ public class DiggerBot extends BotBase {
         }
     }
 
-    private void setStaminaThreshold(String input[]) {
+    private void setStaminaThreshold(String[] input) {
         if (input == null || input.length != 1)
             printInputKeyUsageString(DiggerBot.InputKey.s);
         else {
@@ -509,7 +507,7 @@ public class DiggerBot extends BotBase {
         Utils.consolePrint("Current threshold for stamina is " + staminaThreshold);
     }
 
-    private void setClicksNumber(String input[]) {
+    private void setClicksNumber(String[] input) {
         if (input == null || input.length != 1)
             printInputKeyUsageString(DiggerBot.InputKey.c);
         else {
@@ -529,20 +527,15 @@ public class DiggerBot extends BotBase {
 
     private void toggleToolRepairing() {
         toolRepairing = !toolRepairing;
-        Utils.consolePrint("The repairing of the tool is " + (toolRepairing ?"on":"off"));
+        Utils.consolePrint("The repairing of the tool is " + (toolRepairing ? "on" : "off"));
     }
 
-    private enum WorkMode{
+    private enum WorkMode {
         Unknown,
         Digging,
         DiggingTile,
         Levelling,
         LevellingArea
-    }
-
-    private static class DiggingTileInfo {
-        int x;
-        int y;
     }
 
     private enum InputKey implements BotBase.InputKey {
@@ -557,8 +550,9 @@ public class DiggerBot extends BotBase {
         tr("Toggle the repairing of the tool", ""),
         sm("Toggle the surface mining. The bot will do the same but with the pickaxe on the rock", "");
 
-        private String description;
-        private String usage;
+        private final String description;
+        private final String usage;
+
         InputKey(String description, String usage) {
             this.description = description;
             this.usage = usage;
@@ -578,5 +572,10 @@ public class DiggerBot extends BotBase {
         public String getUsage() {
             return usage;
         }
+    }
+
+    private static class DiggingTileInfo {
+        int x;
+        int y;
     }
 }

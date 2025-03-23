@@ -14,17 +14,17 @@ public class HealingBot extends BotBase {
     private final Set<String> WOUND_NAMES = new HashSet<>(Arrays.asList("Cut", "Bite", "Bruise", "Burn", "Hole", "Acid", "Infection"));
     private float minDamage = 0;
 
+    public HealingBot() {
+        registerInputHandler(HealingBot.InputKey.md, this::setMinimumDamage);
+    }
+
     public static BotRegistration getRegistration() {
         return new BotRegistration(HealingBot.class,
                 "Heals the player's wounds with cotton found in inventory", "h");
     }
 
-    public HealingBot() {
-        registerInputHandler(HealingBot.InputKey.md, this::setMinimumDamage);
-    }
-
     @Override
-    protected void work() throws Exception{
+    protected void work() throws Exception {
         setTimeout(500);
         CreationWindow creationWindow = Mod.hud.getCreationWindow();
         Object progressBar = ReflectionUtil.getPrivateField(creationWindow, ReflectionUtil.getField(creationWindow.getClass(), "progressBar"));
@@ -92,8 +92,9 @@ public class HealingBot extends BotBase {
     private enum InputKey implements BotBase.InputKey {
         md("Set the minimum damage of the wound to be treated", "min_damage");
 
-        private String description;
-        private String usage;
+        private final String description;
+        private final String usage;
+
         InputKey(String description, String usage) {
             this.description = description;
             this.usage = usage;

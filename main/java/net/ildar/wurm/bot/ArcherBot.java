@@ -21,6 +21,11 @@ public class ArcherBot extends BotBase {
     private float staminaThreshold;
     private InventoryMetaItem bow;
 
+    public ArcherBot() {
+        registerInputHandler(ArcherBot.InputKey.s, this::setStaminaThreshold);
+        registerInputHandler(ArcherBot.InputKey.string, input -> stringTheBow());
+    }
+
     public static BotRegistration getRegistration() {
         return new BotRegistration(ArcherBot.class,
                 "Automatically shoots at selected target with currently equipped bow. " +
@@ -29,13 +34,8 @@ public class ArcherBot extends BotBase {
                 "ar");
     }
 
-    public ArcherBot() {
-        registerInputHandler(ArcherBot.InputKey.s, this::setStaminaThreshold);
-        registerInputHandler(ArcherBot.InputKey.string, input -> stringTheBow());
-    }
-
     @Override
-    public void work() throws Exception{
+    public void work() throws Exception {
         setStaminaThreshold(0.9f);
         PaperDollInventory pdi = ReflectionUtil.getPrivateField(Mod.hud,
                 ReflectionUtil.getField(Mod.hud.getClass(), "paperdollInventory"));
@@ -57,14 +57,14 @@ public class ArcherBot extends BotBase {
 
         PickableUnit pickableUnit = ReflectionUtil.getPrivateField(Mod.hud.getSelectBar(),
                 ReflectionUtil.getField(Mod.hud.getSelectBar().getClass(), "selectedUnit"));
-        if (pickableUnit == null){
+        if (pickableUnit == null) {
             Utils.consolePrint("Select mob!");
             deactivate();
             return;
         }
         Utils.consolePrint(this.getClass().getSimpleName() + " will shoot at " + pickableUnit.getHoverName());
         long mobId = pickableUnit.getId();
-        boolean isArcheryTarget=pickableUnit.getHoverName().contains("archery target");
+        boolean isArcheryTarget = pickableUnit.getHoverName().contains("archery target");
 
         int maxActions = Utils.getMaxActionNumber();
         CreationWindow creationWindow = Mod.hud.getCreationWindow();
@@ -77,25 +77,25 @@ public class ArcherBot extends BotBase {
             float damage = Mod.hud.getWorld().getPlayer().getDamage();
             float progress = ReflectionUtil.getPrivateField(progressBar,
                     ReflectionUtil.getField(progressBar.getClass(), "progress"));
-            if ((stamina+damage) > staminaThreshold && creationWindow.getActionInUse() == 0 && progress == 0f) {
+            if ((stamina + damage) > staminaThreshold && creationWindow.getActionInUse() == 0 && progress == 0f) {
                 if (stringBreaks) {
-                        InventoryMetaItem bowstring = Utils.getInventoryItem("bow string");
-                        if (bowstring != null) {
-                            Mod.hud.getWorld().getServerConnection().sendAction(bowstring.getId(),
-                                    new long[]{bow.getId()}, new PlayerAction("",(short) 132, PlayerAction.ANYTHING));//change bowstring
-                        }
+                    InventoryMetaItem bowstring = Utils.getInventoryItem("bow string");
+                    if (bowstring != null) {
+                        Mod.hud.getWorld().getServerConnection().sendAction(bowstring.getId(),
+                                new long[]{bow.getId()}, new PlayerAction("", (short) 132, PlayerAction.ANYTHING));//change bowstring
+                    }
                 }
                 for (int i = 0; i < maxActions; i++)
-                    Mod.hud.getWorld().getServerConnection().sendAction(bow.getId(), new long[]{mobId}, (!isArcheryTarget ? PlayerAction.SHOOT : new PlayerAction("",(short) 134, PlayerAction.ANYTHING)));
+                    Mod.hud.getWorld().getServerConnection().sendAction(bow.getId(), new long[]{mobId}, (!isArcheryTarget ? PlayerAction.SHOOT : new PlayerAction("", (short) 134, PlayerAction.ANYTHING)));
 
                 ServerConnectionListenerClass sscc = Mod.hud.getWorld().getServerConnection().getServerConnectionListener();
                 Map<Long, CreatureCellRenderable> creatures = ReflectionUtil.getPrivateField(sscc,
                         ReflectionUtil.getField(sscc.getClass(), "creatures"));
                 boolean mobAlive = false;
-                if (creatures!=null && !isArcheryTarget)
-                    for(Map.Entry<Long, CreatureCellRenderable> entry:creatures.entrySet())
+                if (creatures != null && !isArcheryTarget)
+                    for (Map.Entry<Long, CreatureCellRenderable> entry : creatures.entrySet())
                         if (entry.getValue().getId() == mobId) mobAlive = true;
-                if (!mobAlive && !isArcheryTarget){
+                if (!mobAlive && !isArcheryTarget) {
                     Utils.consolePrint("Mob dead or too far away!");
                     Utils.showOnScreenMessage("Deactivating archerbot!");
                     deactivate();
@@ -111,7 +111,7 @@ public class ArcherBot extends BotBase {
         registerMessageProcessor(":Combat", message -> message.contains("The string breaks!"), () -> stringBreaks = true);
     }
 
-    private void setStaminaThreshold(String input[]) {
+    private void setStaminaThreshold(String[] input) {
         if (input == null || input.length != 1)
             printInputKeyUsageString(ArcherBot.InputKey.s);
         else {
@@ -139,8 +139,9 @@ public class ArcherBot extends BotBase {
                 "threshold(float value between 0 and 1)"),
         string("String the current bow with a string",
                 "");
-        private String description;
-        private String usage;
+        private final String description;
+        private final String usage;
+
         InputKey(String description, String usage) {
             this.description = description;
             this.usage = usage;

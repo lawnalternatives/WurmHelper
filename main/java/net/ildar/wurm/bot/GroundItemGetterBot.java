@@ -10,11 +10,19 @@ import net.ildar.wurm.Mod;
 import net.ildar.wurm.Utils;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 
-import java.util.*;
+import java.util.ConcurrentModificationException;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class GroundItemGetterBot extends BotBase {
-    private Set <String> itemNames = new HashSet<>();
+    private Set<String> itemNames = new HashSet<>();
     private float distance = 4;
+
+    public GroundItemGetterBot() {
+        registerInputHandler(GroundItemGetterBot.InputKey.a, this::addNewItemName);
+        registerInputHandler(GroundItemGetterBot.InputKey.d, this::setDistance);
+    }
 
     public static BotRegistration getRegistration() {
         return new BotRegistration(GroundItemGetterBot.class,
@@ -22,12 +30,8 @@ public class GroundItemGetterBot extends BotBase {
                 "gig");
     }
 
-    public GroundItemGetterBot() {
-        registerInputHandler(GroundItemGetterBot.InputKey.a, this::addNewItemName);
-        registerInputHandler(GroundItemGetterBot.InputKey.d, this::setDistance);
-    }
     @Override
-    public void work() throws Exception{
+    public void work() throws Exception {
         setTimeout(500);
         while (isActive()) {
             waitOnPause();
@@ -65,17 +69,16 @@ public class GroundItemGetterBot extends BotBase {
                     ReflectionUtil.getField(StaticModelRenderable.class, "x"));
             float itemY = ReflectionUtil.getPrivateField(staticModelRenderable,
                     ReflectionUtil.getField(StaticModelRenderable.class, "y"));
-            if ((Math.sqrt(Math.pow(itemX-x, 2)+Math.pow(itemY-y, 2)) <= distance) && itemNames != null && itemNames.size() > 0)
-                for(String item:itemNames)
+            if ((Math.sqrt(Math.pow(itemX - x, 2) + Math.pow(itemY - y, 2)) <= distance) && itemNames != null && itemNames.size() > 0)
+                for (String item : itemNames)
                     if (staticModelRenderable.getHoverName().contains(item))
                         Mod.hud.sendAction(PlayerAction.TAKE, staticModelRenderable.getId());
-        }
-        catch(IllegalAccessException|NoSuchFieldException e) {
+        } catch (IllegalAccessException | NoSuchFieldException e) {
             Utils.consolePrint("Got exception while processing new item in " + GroundItemGetterBot.class.getSimpleName());
         }
     }
 
-    private void addNewItemName(String []input) {
+    private void addNewItemName(String[] input) {
         if (input == null || input.length < 1) {
             printInputKeyUsageString(GroundItemGetterBot.InputKey.a);
             return;
@@ -86,7 +89,7 @@ public class GroundItemGetterBot extends BotBase {
         addItem(newitem.toString());
     }
 
-    private void setDistance(String []input) {
+    private void setDistance(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(GroundItemGetterBot.InputKey.d);
             return;
@@ -103,7 +106,7 @@ public class GroundItemGetterBot extends BotBase {
         if (itemNames == null)
             itemNames = new HashSet<>();
         itemNames.add(item);
-        Utils.consolePrint("Current item set in " + this.getClass().getSimpleName() + " - " + itemNames.toString());
+        Utils.consolePrint("Current item set in " + this.getClass().getSimpleName() + " - " + itemNames);
     }
 
     enum InputKey implements BotBase.InputKey {
@@ -111,8 +114,9 @@ public class GroundItemGetterBot extends BotBase {
                 "distance(in meters, 1 tile is 4 meters)"),
         a("Add new item name to search list", "item_name");
 
-        private String description;
-        private String usage;
+        private final String description;
+        private final String usage;
+
         InputKey(String description, String usage) {
             this.description = description;
             this.usage = usage;

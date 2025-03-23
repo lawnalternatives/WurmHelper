@@ -11,7 +11,9 @@ public class BotRegistration {
         this.abbreviation = abbreviation;
     }
 
-    public BotProxy getProxy() { return proxy; }
+    public BotProxy getProxy() {
+        return proxy;
+    }
 
     public String getDescription() {
         return description;

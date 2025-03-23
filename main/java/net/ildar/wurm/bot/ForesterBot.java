@@ -20,35 +20,20 @@ import java.util.stream.Collectors;
 
 public class ForesterBot extends BotBase {
     static String DEFAULT_CONTAINER_NAME = "backpack";
+    private static int toHarvest;
     private float staminaThreshold;
     private int maxActions;
-    private AreaAssistant areaAssistant = new AreaAssistant(this);
-
+    private final AreaAssistant areaAssistant = new AreaAssistant(this);
     private long hatchetId;
-    private List<Pair<Integer, Integer>> queuedTiles = new ArrayList<>();
-
+    private final List<Pair<Integer, Integer>> queuedTiles = new ArrayList<>();
     private long lastActionFinishedTime;
-
     private String containerName = DEFAULT_CONTAINER_NAME;
-    private List<String> itemNamesToMove= new ArrayList<>();
-
+    private final List<String> itemNamesToMove = new ArrayList<>();
     private boolean cutAllSprouts;
     private boolean harvesting;
     private boolean planting;
     private boolean shriveledTreesChopping;
     private boolean deforesting;
-    private static int toHarvest;
-
-    public static BotRegistration getRegistration() {
-        return new BotRegistration(ForesterBot.class,
-                "A forester bot. Can pick and plant sprouts, cut trees/bushes and gather the harvest in 3x3 area around player. " +
-                        "Bot can be configured to process rectangular area of any size. " +
-                        "Sprouts, to prevent the inventory overflow, will be put to the containers. The name of containers can be configured. " +
-                        "Default container name is \"" + ForesterBot.DEFAULT_CONTAINER_NAME + "\". Containers only in root directory of player's inventory will be taken into account. " +
-                        "New item names can be added(harvested fruits for example) to be moved to containers too. " +
-                        "Steppe and moss tiles will be cultivated if planting is enabled and player have shovel in his inventory. ",
-                "fr");
-    }
 
     public ForesterBot() {
         registerInputHandler(ForesterBot.InputKey.s, this::setStaminaThreshold);
@@ -60,6 +45,17 @@ public class ForesterBot extends BotBase {
         registerInputHandler(ForesterBot.InputKey.scn, this::setContainerName);
         registerInputHandler(ForesterBot.InputKey.na, this::setMaxActions);
         registerInputHandler(ForesterBot.InputKey.aim, this::addItemToMove);
+    }
+
+    public static BotRegistration getRegistration() {
+        return new BotRegistration(ForesterBot.class,
+                "A forester bot. Can pick and plant sprouts, cut trees/bushes and gather the harvest in 3x3 area around player. " +
+                        "Bot can be configured to process rectangular area of any size. " +
+                        "Sprouts, to prevent the inventory overflow, will be put to the containers. The name of containers can be configured. " +
+                        "Default container name is \"" + ForesterBot.DEFAULT_CONTAINER_NAME + "\". Containers only in root directory of player's inventory will be taken into account. " +
+                        "New item names can be added(harvested fruits for example) to be moved to containers too. " +
+                        "Steppe and moss tiles will be cultivated if planting is enabled and player have shovel in his inventory. ",
+                "fr");
     }
 
     @Override
@@ -94,7 +90,7 @@ public class ForesterBot extends BotBase {
                 toHarvest = 0;
 
             if ((stamina + damage) > staminaThreshold && queuedTiles.size() == 0 && toHarvest == 0) {
-                int checkedtiles[][] = Utils.getAreaCoordinates();
+                int[][] checkedtiles = Utils.getAreaCoordinates();
                 int tileIndex = -1;
                 Set<Long> usedSprouts = new HashSet<>();
                 while (++tileIndex < 9 && queuedTiles.size() + toHarvest < maxActions && toHarvest <= maxActions) {
@@ -107,15 +103,15 @@ public class ForesterBot extends BotBase {
                         FoliageAge fage = FoliageAge.getFoliageAge(tileData);
                         if (harvesting && fage.getAgeId() > FoliageAge.YOUNG_FOUR.getAgeId()
                                 && fage.getAgeId() < FoliageAge.OVERAGED.getAgeId()
-                                && tileType.usesNewData()  && (tileData & 0x8) > 0) {
-                            if(tileType.getTreeType(tileData) == TreeData.TreeType.MAPLE && bucket!=null)
+                                && tileType.usesNewData() && (tileData & 0x8) > 0) {
+                            if (tileType.getTreeType(tileData) == TreeData.TreeType.MAPLE && bucket != null)
                                 world.getServerConnection().sendAction(bucket.getId(),
                                         new long[]{Tiles.getTileId(checkedtiles[tileIndex][0], checkedtiles[tileIndex][1], 0)},
                                         PlayerAction.HARVEST);
                             else
                                 world.getServerConnection().sendAction(sickleId,
-                                    new long[]{Tiles.getTileId(checkedtiles[tileIndex][0], checkedtiles[tileIndex][1], 0)},
-                                    PlayerAction.HARVEST);
+                                        new long[]{Tiles.getTileId(checkedtiles[tileIndex][0], checkedtiles[tileIndex][1], 0)},
+                                        PlayerAction.HARVEST);
                             increaseHarvests(fage);
                             lastActionFinishedTime = System.currentTimeMillis();
                         } else if (fage.getAgeName().contains("overaged")) {
@@ -162,7 +158,7 @@ public class ForesterBot extends BotBase {
                             }
                         }
                     }
-                    if (planting && (tileType.tilename.equals("Steppe")||tileType.tilename.equals("Moss"))) {
+                    if (planting && (tileType.tilename.equals("Steppe") || tileType.tilename.equals("Moss"))) {
                         InventoryMetaItem shovel = Utils.getInventoryItem("shovel");
                         if (shovel != null) {
                             world.getServerConnection().sendAction(shovel.getId(),
@@ -178,12 +174,12 @@ public class ForesterBot extends BotBase {
 
                 List<InventoryMetaItem> sprouts =
                         Utils.getFirstLevelItems()
-                        .stream()
-                        .filter(this::itemShouldBeMoved)
-                        .collect(Collectors.toList());
+                                .stream()
+                                .filter(this::itemShouldBeMoved)
+                                .collect(Collectors.toList());
                 if (sprouts != null && sprouts.size() > 0) {
                     List<InventoryMetaItem> containers = Utils.getFirstLevelItems().stream()
-                            .filter(item->item.getBaseName().contains(containerName))
+                            .filter(item -> item.getBaseName().contains(containerName))
                             .collect(Collectors.toList());
                     if (containers != null && containers.size() > 0)
                         for (InventoryMetaItem container : containers)
@@ -204,7 +200,7 @@ public class ForesterBot extends BotBase {
     private boolean itemShouldBeMoved(InventoryMetaItem item) {
         if (item.getBaseName().contains("sprout"))
             return true;
-        for(String itemName : itemNamesToMove) {
+        for (String itemName : itemNamesToMove) {
             if (item.getBaseName().contains(itemName))
                 return true;
         }
@@ -212,7 +208,7 @@ public class ForesterBot extends BotBase {
     }
 
     private void registerEventProcessors() {
-        registerEventProcessor(message -> message.contains("You are too far away") ,
+        registerEventProcessor(message -> message.contains("You are too far away"),
                 this::actionNotQueued);
         registerEventProcessor(message -> message.contains("You make a lot of errors and need to take a break"),
                 this::actionFinished);
@@ -241,14 +237,11 @@ public class ForesterBot extends BotBase {
         String age = fage.getAgeName();
         if (age.contains("very old")) {
             toHarvest += maxHarvest;
-        }
-        else if (fage.getAgeId() == FoliageAge.OLD_ONE.getAgeId() || fage.getAgeId() == FoliageAge.OLD_ONE_SPROUTING.getAgeId()) {
+        } else if (fage.getAgeId() == FoliageAge.OLD_ONE.getAgeId() || fage.getAgeId() == FoliageAge.OLD_ONE_SPROUTING.getAgeId()) {
             toHarvest += Math.max(1, maxHarvest - 2);
-        }
-        else if (age.contains("old")) {
+        } else if (age.contains("old")) {
             toHarvest += Math.max(1, maxHarvest - 1);
-        }
-        else if (age.contains("mature")) {
+        } else if (age.contains("mature")) {
             toHarvest++;
         }
     }
@@ -259,7 +252,7 @@ public class ForesterBot extends BotBase {
         lastActionFinishedTime = System.currentTimeMillis();
     }
 
-    private void addItemToMove(String []input) {
+    private void addItemToMove(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(ForesterBot.InputKey.aim);
             return;
@@ -268,8 +261,8 @@ public class ForesterBot extends BotBase {
         Utils.consolePrint("Items with name \"" + input[0] + "\" will be moved to containers");
     }
 
-    private void setMaxActions(String [] input) {
-        if (input.length != 1 ){
+    private void setMaxActions(String[] input) {
+        if (input.length != 1) {
             printInputKeyUsageString(ForesterBot.InputKey.na);
             return;
         }
@@ -281,8 +274,8 @@ public class ForesterBot extends BotBase {
         }
     }
 
-    private void setContainerName(String []input) {
-        if (input.length != 1 ){
+    private void setContainerName(String[] input) {
+        if (input.length != 1) {
             printInputKeyUsageString(ForesterBot.InputKey.scn);
             return;
         }
@@ -323,7 +316,7 @@ public class ForesterBot extends BotBase {
 
     private void actionNotQueued() {
         if (queuedTiles.size() > 0) {
-            queuedTiles.remove(queuedTiles.size()  - 1);
+            queuedTiles.remove(queuedTiles.size() - 1);
             lastActionFinishedTime = System.currentTimeMillis();
         }
         toHarvest = 0;
@@ -363,12 +356,11 @@ public class ForesterBot extends BotBase {
                     Utils.consolePrint("Planting is off!");
                 }
             }
-        }
-        else
+        } else
             Utils.consolePrint("Deforesting is off!");
     }
 
-    private void setStaminaThreshold(String input[]) {
+    private void setStaminaThreshold(String[] input) {
         if (input == null || input.length != 1)
             printInputKeyUsageString(ForesterBot.InputKey.s);
         else {
@@ -380,6 +372,7 @@ public class ForesterBot extends BotBase {
             }
         }
     }
+
     private void setStaminaThreshold(float s) {
         staminaThreshold = s;
         Utils.consolePrint("Current threshold for stamina is " + staminaThreshold);
@@ -397,8 +390,9 @@ public class ForesterBot extends BotBase {
         na("Set the number of actions bot will do each time", "number"),
         aim("Add new item name for moving into containers", "item_name");
 
-        private String description;
-        private String usage;
+        private final String description;
+        private final String usage;
+
         InputKey(String description, String usage) {
             this.description = description;
             this.usage = usage;

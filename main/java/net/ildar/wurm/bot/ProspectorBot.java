@@ -15,18 +15,18 @@ public class ProspectorBot extends BotBase {
     private float staminaThreshold;
     private int clicks;
 
-    public static BotRegistration getRegistration() {
-        return new BotRegistration(ProspectorBot.class,
-                "Prospect selected tile", "pr");
-    }
-
     public ProspectorBot() {
         registerInputHandler(ProspectorBot.InputKey.s, this::setStaminaThreshold);
         registerInputHandler(ProspectorBot.InputKey.c, this::setClicksNumber);
     }
 
+    public static BotRegistration getRegistration() {
+        return new BotRegistration(ProspectorBot.class,
+                "Prospect selected tile", "pr");
+    }
+
     @Override
-    public void work() throws Exception{
+    public void work() throws Exception {
         InventoryMetaItem pickaxe = Utils.getInventoryItem("pickaxe");
         long pickaxeId;
         if (pickaxe == null) {
@@ -57,17 +57,17 @@ public class ProspectorBot extends BotBase {
             float damage = Mod.hud.getWorld().getPlayer().getDamage();
             float progress = ReflectionUtil.getPrivateField(progressBar,
                     ReflectionUtil.getField(progressBar.getClass(), "progress"));
-            if ((stamina+damage) > staminaThreshold && progress == 0f) {
+            if ((stamina + damage) > staminaThreshold && progress == 0f) {
                 if (pickaxe.getDamage() > 10)
                     Mod.hud.sendAction(PlayerAction.REPAIR, pickaxeId);
-                for(int i = 0; i < clicks; i++)
+                for (int i = 0; i < clicks; i++)
                     Mod.hud.getWorld().getServerConnection().sendAction(pickaxeId, new long[]{caveWallId}, PlayerAction.PROSPECT);
             }
             sleep(timeout);
         }
     }
 
-    private void setStaminaThreshold(String input[]) {
+    private void setStaminaThreshold(String[] input) {
         if (input == null || input.length != 1)
             printInputKeyUsageString(ProspectorBot.InputKey.s);
         else {
@@ -85,7 +85,7 @@ public class ProspectorBot extends BotBase {
         Utils.consolePrint("Current threshold for stamina is " + staminaThreshold);
     }
 
-    private void setClicksNumber(String []input) {
+    private void setClicksNumber(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(ProspectorBot.InputKey.c);
             return;
@@ -109,8 +109,9 @@ public class ProspectorBot extends BotBase {
                 "threshold(float value between 0 and 1)"),
         c("Change the amount of clicks bot will do each time", "n(integer value)");
 
-        private String description;
-        private String usage;
+        private final String description;
+        private final String usage;
+
         InputKey(String description, String usage) {
             this.description = description;
             this.usage = usage;

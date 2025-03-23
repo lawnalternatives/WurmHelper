@@ -19,7 +19,7 @@ public class CrafterBot extends BotBase {
     private boolean repairInstrument = true;
     private String targetName;
     private String sourceName;
-    private Comparator<InventoryMetaItem> weightComparator = Comparator.comparingDouble(InventoryMetaItem::getWeight);
+    private final Comparator<InventoryMetaItem> weightComparator = Comparator.comparingDouble(InventoryMetaItem::getWeight);
     private int targetX;
     private int targetY;
     private int sourceX;
@@ -32,13 +32,6 @@ public class CrafterBot extends BotBase {
     private boolean withoutActionsInUse;
     private long lastClick;
     private boolean singleSourceItemMode;
-
-    public static BotRegistration getRegistration() {
-        return new BotRegistration(CrafterBot.class,
-                "Automatically does crafting operations using items from crafting window. " +
-                        "New crafting operations are not starting until an action queue becomes empty. This behaviour can be disabled. ",
-                "c");
-    }
 
     public CrafterBot() {
         registerInputHandler(CrafterBot.InputKey.r, input -> toggleRepairInstrument());
@@ -58,9 +51,16 @@ public class CrafterBot extends BotBase {
         registerInputHandler(CrafterBot.InputKey.s1s, input -> toggleSingleSourceItemMode());
     }
 
+    public static BotRegistration getRegistration() {
+        return new BotRegistration(CrafterBot.class,
+                "Automatically does crafting operations using items from crafting window. " +
+                        "New crafting operations are not starting until an action queue becomes empty. This behaviour can be disabled. ",
+                "c");
+    }
+
     @Override
     @SuppressWarnings("ConstantConditions")
-    public void work() throws Exception{
+    public void work() throws Exception {
         setStaminaThreshold(0.96f);
         long lastSourceCombineTime = 0;
         long lastTargetCombineTime = 0;
@@ -179,12 +179,12 @@ public class CrafterBot extends BotBase {
                 }
             }
 
-            if (source != null && target != null && (stamina+damage) > staminaThreshold && (creationWindow.getActionInUse() == 0 || withoutActionsInUse) && progress == 0f) {
+            if (source != null && target != null && (stamina + damage) > staminaThreshold && (creationWindow.getActionInUse() == 0 || withoutActionsInUse) && progress == 0f) {
                 sendCreateAction.invoke(creationWindow);
             }
             if (source != null && target != null
-                    && (stamina+damage) > staminaThreshold
-                    && Math.abs(lastClick - System.currentTimeMillis()) > 20000){
+                    && (stamina + damage) > staminaThreshold
+                    && Math.abs(lastClick - System.currentTimeMillis()) > 20000) {
                 requestCreationList.invoke(creationWindow);
                 while (creationWindow.getActionInUse() > 0)
                     creationWindow.decreaseActionInUse();
@@ -213,11 +213,11 @@ public class CrafterBot extends BotBase {
 
     private void toggleSingleSourceItemMode() {
         singleSourceItemMode = !singleSourceItemMode;
-        Utils.consolePrint("Single source item mode is " + (singleSourceItemMode?"on":"off"));
+        Utils.consolePrint("Single source item mode is " + (singleSourceItemMode ? "on" : "off"));
     }
 
-    private void setActionNumber(String input[]) {
-        if(input == null || input.length != 1) {
+    private void setActionNumber(String[] input) {
+        if (input == null || input.length != 1) {
             printInputKeyUsageString(CrafterBot.InputKey.an);
             return;
         }
@@ -232,17 +232,17 @@ public class CrafterBot extends BotBase {
         }
     }
 
-    private void addSourceByItemId(String input[]) {
-        if(input == null || input.length != 1) {
+    private void addSourceByItemId(String[] input) {
+        if (input == null || input.length != 1) {
             printInputKeyUsageString(CrafterBot.InputKey.ssid);
             return;
         }
         try {
             long id = Long.parseLong(input[0]);
             InventoryListComponent ilc = Mod.hud.getInventoryWindow().getInventoryListComponent();
-            List <InventoryMetaItem> allItems = Utils.getSelectedItems(ilc, true, true);
+            List<InventoryMetaItem> allItems = Utils.getSelectedItems(ilc, true, true);
             @SuppressWarnings("ConstantConditions")
-            InventoryMetaItem sourceItem = allItems.stream().filter(item->item.getId() == id).findAny().get();
+            InventoryMetaItem sourceItem = allItems.stream().filter(item -> item.getId() == id).findAny().get();
             CreationWindow creationWindow = Mod.hud.getCreationWindow();
             CreationFrame source = ReflectionUtil.getPrivateField(creationWindow,
                     ReflectionUtil.getField(creationWindow.getClass(), "source"));
@@ -271,7 +271,7 @@ public class CrafterBot extends BotBase {
         }
     }
 
-    private void setStaminaThreshold(String input[]) {
+    private void setStaminaThreshold(String[] input) {
         if (input == null || input.length != 1)
             printInputKeyUsageString(CrafterBot.InputKey.s);
         else {
@@ -289,7 +289,7 @@ public class CrafterBot extends BotBase {
         Utils.consolePrint("Current threshold for stamina is " + staminaThreshold);
     }
 
-    private void setCombineTimeout(String input[]) {
+    private void setCombineTimeout(String[] input) {
         if (input == null || input.length != 1) {
             printInputKeyUsageString(CrafterBot.InputKey.ctimeout);
             return;
@@ -334,8 +334,8 @@ public class CrafterBot extends BotBase {
             Utils.consolePrint(this.getClass().getSimpleName() + " will sort the targets and sources by weight");
     }
 
-    private void setTargetName(String input[]) {
-        if(input == null || input.length == 0) {
+    private void setTargetName(String[] input) {
+        if (input == null || input.length == 0) {
             printInputKeyUsageString(CrafterBot.InputKey.st);
             return;
         }
@@ -345,8 +345,8 @@ public class CrafterBot extends BotBase {
         setTargetName(target.toString());
     }
 
-    private void setSourceName(String input[]) {
-        if(input == null || input.length == 0) {
+    private void setSourceName(String[] input) {
+        if (input == null || input.length == 0) {
             printInputKeyUsageString(CrafterBot.InputKey.ss);
             return;
         }
@@ -356,7 +356,7 @@ public class CrafterBot extends BotBase {
         setSourceName(source.toString());
     }
 
-    private void toggleRepairInstrument(){
+    private void toggleRepairInstrument() {
         repairInstrument = !repairInstrument;
         if (repairInstrument)
             Utils.consolePrint("Instrument auto repairing is on!");
@@ -397,12 +397,12 @@ public class CrafterBot extends BotBase {
     private enum InputKey implements BotBase.InputKey {
         r("Toggle the source item repairing(on the left side of crafting window). " +
                 "Usually it is an instrument. When the source item gets 10% damage player will repair it automatically", ""),
-        st("Set the target item name. " + CrafterBot.class.getSimpleName()+ " will place item with provided name from your inventory to the target slot(on the right side of crafting window)",
+        st("Set the target item name. " + CrafterBot.class.getSimpleName() + " will place item with provided name from your inventory to the target slot(on the right side of crafting window)",
                 "target_name"),
-        stxy("Set the target item fixed point. " + CrafterBot.class.getSimpleName()+ " will place item from that fixed point of screen to the target item slot(on the right side of crafting window)", ""),
-        ss("Set the source item name. " + CrafterBot.class.getSimpleName()+ " will place item with provided name from your inventory to the source slot(on the left side of crafting window)",
+        stxy("Set the target item fixed point. " + CrafterBot.class.getSimpleName() + " will place item from that fixed point of screen to the target item slot(on the right side of crafting window)", ""),
+        ss("Set the source item name. " + CrafterBot.class.getSimpleName() + " will place item with provided name from your inventory to the source slot(on the left side of crafting window)",
                 "source_name"),
-        ssxy("Set the source item fixed point. " + CrafterBot.class.getSimpleName()+ " will place item from that fixed point of screen to the source item slot(on the left side of crafting window)", ""),
+        ssxy("Set the source item fixed point. " + CrafterBot.class.getSimpleName() + " will place item from that fixed point of screen to the source item slot(on the left side of crafting window)", ""),
         nosort("Sorting of source and target items is enabled by default. This key toggles sorting on and off", ""),
         cs("Combine source items(on the left side of crafting window)", ""),
         ct("Combine target items(on the right side of crafting window)", ""),
@@ -416,8 +416,9 @@ public class CrafterBot extends BotBase {
                 "By default " + CrafterBot.class.getSimpleName() + " will check action queue and start crafting operations only when it is empty", ""),
         s1s("Toggles the setting of single item to source slot of crafting window", "");
 
-        private String description;
-        private String usage;
+        private final String description;
+        private final String usage;
+
         InputKey(String description, String usage) {
             this.description = description;
             this.usage = usage;

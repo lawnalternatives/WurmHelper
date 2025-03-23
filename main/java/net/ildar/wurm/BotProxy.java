@@ -11,9 +11,13 @@ public final class BotProxy {
         this.botClass = botClass;
     }
 
-    public Class<? extends Thread> getBotClass() { return botClass; }
+    public Class<? extends Thread> getBotClass() {
+        return botClass;
+    }
 
-    public String getSimpleName() { return botClass.getSimpleName(); }
+    public String getSimpleName() {
+        return botClass.getSimpleName();
+    }
 
     public void instantiate() {
         try {

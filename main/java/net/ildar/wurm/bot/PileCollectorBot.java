@@ -18,21 +18,21 @@ import java.util.stream.Collectors;
 
 public class PileCollectorBot extends BotBase {
     private final float MAX_DISTANCE = 4;
-    private Set<Long> openedPiles = new HashSet<>();
+    private final Set<Long> openedPiles = new HashSet<>();
     private InventoryListComponent targetLc;
     private String containerName = "large crate";
     private int containerCapacity = 300;
     private String targetItemName = "dirt";
 
-    public static BotRegistration getRegistration() {
-        return new BotRegistration(PileCollectorBot.class,
-                "Collects piles of items to bulk containers. Default name for target items is \"dirt\"", "pc");
-    }
-
     public PileCollectorBot() {
         registerInputHandler(PileCollectorBot.InputKey.stn, this::setTargetName);
         registerInputHandler(PileCollectorBot.InputKey.st, this::setTargetInventoryName);
         registerInputHandler(PileCollectorBot.InputKey.stcc, this::setContainerCapacity);
+    }
+
+    public static BotRegistration getRegistration() {
+        return new BotRegistration(PileCollectorBot.class,
+                "Collects piles of items to bulk containers. Default name for target items is \"dirt\"", "pc");
     }
 
     @Override
@@ -62,8 +62,9 @@ public class PileCollectorBot extends BotBase {
                         }
 
                     }
-                } catch (ConcurrentModificationException ignored) {}
-                for(WurmComponent wurmComponent : Mod.getInstance().components) {
+                } catch (ConcurrentModificationException ignored) {
+                }
+                for (WurmComponent wurmComponent : Mod.getInstance().components) {
                     if (wurmComponent instanceof ItemListWindow) {
                         InventoryListComponent ilc = ReflectionUtil.getPrivateField(wurmComponent,
                                 ReflectionUtil.getField(wurmComponent.getClass(), "component"));
@@ -89,16 +90,17 @@ public class PileCollectorBot extends BotBase {
                 Utils.consolePrint("No target containers!");
                 return;
             }
-            for(InventoryMetaItem container : containers) {
+            for (InventoryMetaItem container : containers) {
                 List<InventoryMetaItem> containerContents = container.getChildren();
                 int itemsCount = 0;
                 if (containerContents != null) {
-                    for(InventoryMetaItem contentItem : containerContents) {
+                    for (InventoryMetaItem contentItem : containerContents) {
                         String customName = contentItem.getCustomName();
                         if (customName != null) {
                             try {
                                 itemsCount += Integer.parseInt(customName.substring(0, customName.length() - 1));
-                            } catch (NumberFormatException ignored) {}
+                            } catch (NumberFormatException ignored) {
+                            }
                         }
                     }
                 }
@@ -110,7 +112,7 @@ public class PileCollectorBot extends BotBase {
         }
     }
 
-    private void setTargetName(String []input) {
+    private void setTargetName(String[] input) {
         if (input == null || input.length == 0) {
             printInputKeyUsageString(PileCollectorBot.InputKey.stn);
             return;
@@ -123,7 +125,7 @@ public class PileCollectorBot extends BotBase {
         Utils.consolePrint("New name for target items is \"" + this.targetItemName + "\"");
     }
 
-    private void setTargetInventoryName(String []input) {
+    private void setTargetInventoryName(String[] input) {
         WurmComponent wurmComponent = Utils.getTargetComponent(c -> c instanceof ItemListWindow);
         if (wurmComponent == null) {
             Utils.consolePrint("Can't find an inventory");
@@ -146,7 +148,7 @@ public class PileCollectorBot extends BotBase {
         Utils.consolePrint("The target was set with container name - \"" + containerName + "\"");
     }
 
-    private void setContainerCapacity(String []input) {
+    private void setContainerCapacity(String[] input) {
         if (input == null || input.length == 0) {
             printInputKeyUsageString(PileCollectorBot.InputKey.stcc);
             return;
@@ -154,7 +156,7 @@ public class PileCollectorBot extends BotBase {
         try {
             containerCapacity = Integer.parseInt(input[0]);
             Utils.consolePrint("New container capacity is " + containerCapacity);
-        }catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             Utils.consolePrint("Wrong value!");
         }
     }
@@ -164,8 +166,9 @@ public class PileCollectorBot extends BotBase {
         st("Set the target bulk inventory to put items to. Provide an optional name of containers inside inventory. Default is \"large crate\"", "[name]"),
         stcc("Set the capacity for target container. Default value is 300", "capacity(integer value)");
 
-        private String description;
-        private String usage;
+        private final String description;
+        private final String usage;
+
         InputKey(String description, String usage) {
             this.description = description;
             this.usage = usage;

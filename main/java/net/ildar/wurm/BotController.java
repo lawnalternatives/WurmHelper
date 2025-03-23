@@ -1,39 +1,40 @@
 package net.ildar.wurm;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class BotController {
-    private static BotController instance;
+    private final static String jarFilePrefix = "jar:file:";
+    private final String jarFilePath;
+    private final BotClassLoader botClassLoader;
     //The list of all bot implementations.
     private final List<BotRegistration> botList = new ArrayList<>();
     private boolean gPaused = false;
-    private final ClassLoader botClassLoader = new BotClassLoader(Thread.currentThread().getContextClassLoader());
 
-    private static class InstanceHolder {
-        private static final BotController instance = new BotController();
+    private BotController() {
+        String classResourcePath = Mod.class.getName().replace('.', '/');
+        String jarResourceName = Utils.getResource("/" + classResourcePath + ".class").toString();
+        int SkipPrefix = jarResourceName.indexOf(jarFilePrefix) + jarFilePrefix.length();
+        int DropSuffix = jarResourceName.lastIndexOf("!/");
+        this.jarFilePath = jarResourceName
+                .substring(SkipPrefix, DropSuffix)
+                .replaceAll("%.{2}", " ");
+        this.botClassLoader = new BotClassLoader(Thread.currentThread().getContextClassLoader(), jarFilePath);
+        initBotRegistrations();
     }
 
     public static BotController getInstance() {
         return InstanceHolder.instance;
     }
 
-    private BotController() {
-        initBotRegistrations();
-    }
-
     private synchronized void initBotRegistrations() {
-        String classResourcePath = Mod.class.getName().replace('.', '/');
-        String jarFileName = Utils.getResource("/" + classResourcePath + ".class").toString();
-        final String jarFilePrefix = "jar:file:";
-        jarFileName = jarFileName
-                .substring(jarFileName.indexOf(jarFilePrefix) + jarFilePrefix.length(), jarFileName.lastIndexOf("!/"))
-                .replaceAll("%.{2}", " ");
-        Utils.consolePrint("loading from jar: " + jarFileName);
-        try (JarFile jarFile = new JarFile(jarFileName)) {
+        try (JarFile jarFile = new JarFile(jarFilePath)) {
             jarFile.stream().forEach((jarEntry) -> {
                 if (!jarEntry.getName().endsWith(".class"))
                     return;
@@ -44,7 +45,6 @@ public class BotController {
                     Class<?> jarEntryClass = Class.forName(jarEntryClassName, true, botClassLoader);
                     if (!jarEntryClassName.endsWith("Bot"))
                         return;
-                    Utils.consolePrint("registering bot " + jarEntryClassName);
                     BotRegistration newRegistration = (BotRegistration) jarEntryClass.getDeclaredMethod("getRegistration").invoke(null);
                     botList.add(newRegistration);
 
@@ -65,19 +65,21 @@ public class BotController {
             botList.stream()
                     .map(br -> br.getAbbreviation() + ": " + br.getDescription())
                     .forEachOrdered(Utils::consolePrint);
-            Utils.writeToConsoleInputLine(Mod.ConsoleCommand.bot.name() + " ");
+            Utils.writeToConsoleInputLine();
             return;
         }
         switch (data[0]) {
             case "reload":
                 reloadAllBots();
+                Utils.writeToConsoleInputLine();
                 return;
             case "off":
                 deactivateAllBots();
+                Utils.writeToConsoleInputLine();
                 return;
             case "pause":
                 pauseAllBots();
-                Utils.writeToConsoleInputLine(Mod.ConsoleCommand.bot.name() + " pause");
+                Utils.writeToConsoleInputLine("pause");
                 return;
         }
         BotProxy proxy = getBotProxy(data[0]);
@@ -89,7 +91,7 @@ public class BotController {
 
         if (data.length == 1) {
             printBotDescription(proxy);
-            Utils.writeToConsoleInputLine(Mod.ConsoleCommand.bot.name() + " " + data[0] + " ");
+            Utils.writeToConsoleInputLine(data[0]);
             return;
         }
         if (isActive(proxy)) {
@@ -113,7 +115,7 @@ public class BotController {
                 Utils.consolePrint(proxy.getSimpleName() + " is not running!");
             }
         }
-        Utils.writeToConsoleInputLine(Mod.ConsoleCommand.bot.name() + " " + data[0] + " ");
+        Utils.writeToConsoleInputLine(data[0]);
     }
 
     public Stream<BotProxy> getActiveBots() {
@@ -134,6 +136,11 @@ public class BotController {
         deactivateAllBots();
         botList.clear();
         initBotRegistrations();
+        Utils.consolePrint("Reloaded: " + botList
+                .stream()
+                .map(BotRegistration::getProxy)
+                .map(BotProxy::getSimpleName)
+                .collect(Collectors.joining(", ")));
     }
 
     public synchronized void onBotInterrupted(Class<? extends Thread> botClass) {
@@ -192,5 +199,9 @@ public class BotController {
                 return botRegistration;
         }
         return null;
+    }
+
+    private static class InstanceHolder {
+        private static final BotController instance = new BotController();
     }
 }

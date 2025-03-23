@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 public class FarmerBot extends BotBase {
     private float staminaThreshold;
-    private AreaAssistant areaAssistant = new AreaAssistant(this);
+    private final AreaAssistant areaAssistant = new AreaAssistant(this);
     private boolean farmTending;
     private InventoryMetaItem rakeItem;
     private boolean harvesting;
@@ -31,11 +31,6 @@ public class FarmerBot extends BotBase {
     private List<String> dropNamesList;
     private int dropLimit;
 
-    public static BotRegistration getRegistration() {
-        return new BotRegistration(FarmerBot.class,
-                "Tends the fields, plants the seeds, cultivates the ground, collects harvests", "f");
-    }
-
     public FarmerBot() {
         registerInputHandler(FarmerBot.InputKey.s, this::setStaminaThreshold);
         registerInputHandler(FarmerBot.InputKey.ft, input -> toggleFarmTending());
@@ -46,6 +41,11 @@ public class FarmerBot extends BotBase {
         registerInputHandler(FarmerBot.InputKey.and, this::addDropItemName);
         registerInputHandler(FarmerBot.InputKey.r, input -> toggleRepairing());
         registerInputHandler(FarmerBot.InputKey.dl, this::setDropLimit);
+    }
+
+    public static BotRegistration getRegistration() {
+        return new BotRegistration(FarmerBot.class,
+                "Tends the fields, plants the seeds, cultivates the ground, collects harvests", "f");
     }
 
     @Override
@@ -66,7 +66,7 @@ public class FarmerBot extends BotBase {
             float progress = ReflectionUtil.getPrivateField(progressBar,
                     ReflectionUtil.getField(progressBar.getClass(), "progress"));
             if ((stamina + damage) > staminaThreshold && progress == 0f) {
-                int checkedtiles[][] = Utils.getAreaCoordinates();
+                int[][] checkedtiles = Utils.getAreaCoordinates();
                 int initiatedActions = 0;
                 int tileIndex = -1;
 
@@ -74,7 +74,7 @@ public class FarmerBot extends BotBase {
                 int usedSeeds = 0;
                 if (planting)
                     seeds = Utils.getInventoryItems(seedsName);
-                while(++tileIndex < checkedtiles.length && initiatedActions < maxActions) {
+                while (++tileIndex < checkedtiles.length && initiatedActions < maxActions) {
                     Tiles.Tile tileType = world.getNearTerrainBuffer().getTileType(checkedtiles[tileIndex][0], checkedtiles[tileIndex][1]);
                     byte tileData = world.getNearTerrainBuffer().getData(checkedtiles[tileIndex][0], checkedtiles[tileIndex][1]);
                     if (cultivating) {
@@ -87,7 +87,7 @@ public class FarmerBot extends BotBase {
                             continue;
                         }
                     }
-                    if (farmTending){
+                    if (farmTending) {
                         checkToolDamage(rakeItem);
                         if (tileType == com.wurmonline.mesh.Tiles.Tile.TILE_FIELD || tileType == com.wurmonline.mesh.Tiles.Tile.TILE_FIELD2)
                             if (!com.wurmonline.mesh.FieldData.isTended(tileData)) {
@@ -130,7 +130,7 @@ public class FarmerBot extends BotBase {
             }
             if (dropping) {
                 List<InventoryMetaItem> droplist = new ArrayList<>();
-                for(String dropName : dropNamesList)
+                for (String dropName : dropNamesList)
                     droplist.addAll(Utils.getInventoryItems(dropName));
                 if (droplist.size() > 0) {
                     if (dropLimit != 0) {
@@ -153,7 +153,7 @@ public class FarmerBot extends BotBase {
             Mod.hud.sendAction(PlayerAction.REPAIR, toolItem.getId());
     }
 
-    private void addDropItemName(String []input) {
+    private void addDropItemName(String[] input) {
         if (!dropping) {
             Utils.consolePrint("The dropping is off. Can't add new item name to drop");
             return;
@@ -167,8 +167,9 @@ public class FarmerBot extends BotBase {
             name.append(" ").append(input[i]);
         }
         dropNamesList.add(name.toString());
-        Utils.consolePrint("New name of item to drop was added - \"" + name.toString() + "\"");
+        Utils.consolePrint("New name of item to drop was added - \"" + name + "\"");
     }
+
     private void toggleDropping() {
         dropping = !dropping;
         if (dropping) {
@@ -194,7 +195,7 @@ public class FarmerBot extends BotBase {
         }
     }
 
-    private void togglePlanting(String []input) {
+    private void togglePlanting(String[] input) {
         if (!planting) {
             if (input == null || input.length == 0) {
                 printInputKeyUsageString(FarmerBot.InputKey.p);
@@ -246,10 +247,10 @@ public class FarmerBot extends BotBase {
 
     private void toggleRepairing() {
         repairing = !repairing;
-        Utils.consolePrint("The tool repairing is " + (repairing?"on":"off"));
+        Utils.consolePrint("The tool repairing is " + (repairing ? "on" : "off"));
     }
 
-    private void setStaminaThreshold(String input[]) {
+    private void setStaminaThreshold(String[] input) {
         if (input == null || input.length != 1)
             printInputKeyUsageString(FarmerBot.InputKey.s);
         else {
@@ -272,7 +273,7 @@ public class FarmerBot extends BotBase {
             printInputKeyUsageString(FarmerBot.InputKey.dl);
             return;
         }
-        try{
+        try {
             dropLimit = Integer.parseInt(input[0]);
             Utils.consolePrint("New drop limit is " + dropLimit);
         } catch (NumberFormatException e) {
@@ -292,8 +293,9 @@ public class FarmerBot extends BotBase {
         d("Toggle the dropping of harvested items. Add item names to drop by \"" + and.name() + "\" key", ""),
         dl("Set the drop limit, configured number of harvests won't be dropped", "number");
 
-        private String description;
-        private String usage;
+        private final String description;
+        private final String usage;
+
         InputKey(String description, String usage) {
             this.description = description;
             this.usage = usage;
